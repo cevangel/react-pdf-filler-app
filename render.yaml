@@ -3,6 +3,6 @@ services:
     name: pdf-filler-backend
     env: node
     plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm start
-    rootDir: .
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
