@@ -43,7 +43,7 @@ function App() {
     try {
       // Send formData to the backend endpoint using POST
       const response = await axios.post(
-        "https://react-pdf-filler-app.onrender.com", 
+        "https://react-pdf-filler-app.onrender.com/fill-form", 
       {
         templateName: selectedTemplate,
         ...formData
