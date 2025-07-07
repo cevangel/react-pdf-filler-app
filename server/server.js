@@ -80,6 +80,18 @@ if (templateName === "OASIS") {
     //add other OASIS fields here
   ];
   oasisFields.forEach(fieldName => {
+    try {
+      const checkboxes = form.getFields().filter(f => f.getName() === "uneventful");
+      checkboxes.forEach(checkbox => {
+        if (req.body.uneventful) {
+          checkbox.check();
+        } else {
+          checkbox.uncheck();
+        }
+      });
+    } catch (err) {
+      console.warn(`⚠️ Could not update 'uneventful' checkboxes: ${err.message}`);
+    }
   try{
     const field = form.getField(fieldName);
     if (field && field.constructor.name === 'PDFTextField') {
