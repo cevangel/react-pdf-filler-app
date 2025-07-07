@@ -45,8 +45,8 @@ function App() {
     functionalLevel: "",
     hasDiabetes: true,
     needsAssistance: true,
-    // ...other OASIS checkboxes
     uneventful: false,
+    // ...other OASIS checkboxes
   };
 
   const defaultFormData = {
@@ -68,8 +68,32 @@ function App() {
   };
 
   const oasisCheckboxFields = [
-    "uneventful",
-    // ...other checkbox fields
+    "hasDiabetes",
+    "needsAssistance",
+    // ...all OASIS checkbox field names
+  ];
+
+  const zeroFields = [
+    "emergentCare",
+    "someOtherField2",
+    "AOMSC",
+    "falls",
+    // ...all text field names you want to fill with "0"
+  ];
+
+  const oneFields = [
+    "medListProvided",
+    "medListProvided2",
+    "healthLit",
+    "conductMentI",
+    "vaccGiven",
+,
+    // ...all text field names you want to fill with "0"
+  ];
+
+  const naFields = [
+    "naAdmission",
+    // ...all text field names you want to fill with "NA"
   ];
 
   // This function is triggered when a user types in any input field.
@@ -235,19 +259,6 @@ function App() {
               </label>
             </div>
           ))}
-          
-          <label>
-            <input
-              type="checkbox"
-              name="uneventful"
-              checked={!!formData.uneventful}
-              onChange={e => setFormData({
-                ...formData,
-                uneventful: e.target.checked
-              })}
-            />
-            Plan of care uneventful
-          </label>
           
           {/* NEW: Submit button with gradient background and hover effects */}
           
