@@ -106,12 +106,39 @@ if (templateName === "OASIS") {
   });
 }
     form.updateFieldAppearances();
-
+    form.flatten();
     const pdfBytes = await pdfDoc.save();
 
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename=filled-form.pdf',
+    });
+
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).send("Failed to fill PDF form");
+  }
+});
+
+app.post('/fill-test', async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'templates', 'TestTemplate.pdf');
+    const existingPdfBytes = fs.readFileSync(filePath);
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    const form = pdfDoc.getForm();
+    const field = form.getField('testField');
+    field.setText('123');
+
+    form.updateFieldAppearances();
+    // form.flatten(); // Optional: test with and without flatten
+
+    const pdfBytes = await pdfDoc.save();
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=filled-test.pdf',
     });
 
     res.send(Buffer.from(pdfBytes));
