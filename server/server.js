@@ -7,12 +7,12 @@ const { PDFDocument } = require('pdf-lib');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
-
 app.use(cors());
 app.use(express.json());
 
 app.post('/fill-form', async (req, res) => {
+  console.log(req.body);
+
   try {
     const { templateName } = req.body;
     const filePath = path.join(__dirname, 'templates', `${templateName}.pdf`);
@@ -27,7 +27,7 @@ app.post('/fill-form', async (req, res) => {
     ];
 
     form.getFields().forEach(field => {
-      console.log(`${field.getName()} - ${field.constructor.name}`);
+      console.log(field.getName(), field.constructor.name);
     });
 
     const checkboxes = ["CheckBox", "Checkbox"];
@@ -81,7 +81,9 @@ if (templateName === "OASIS") {
   ];
   oasisFields.forEach(fieldName => {
     try {
-      const checkboxes = form.getFields().filter(f => f.getName() === "uneventful");
+      const checkboxes = form.getFields().filter(
+        f => f.getName().startsWith("uneventful")
+      );
       checkboxes.forEach(checkbox => {
         if (req.body.uneventful) {
           checkbox.check();
