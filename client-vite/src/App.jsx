@@ -43,8 +43,10 @@ function App() {
     startOfCareDate: "",
     primaryDiagnosis: "",
     functionalLevel: "",
-    uneventful: true,
-    // ...add all your OASIS checkbox fields here, set to true for default checked
+    hasDiabetes: true,
+    needsAssistance: true,
+    // ...other OASIS checkboxes
+    uneventful: false,
   };
 
   const defaultFormData = {
@@ -233,6 +235,19 @@ function App() {
               </label>
             </div>
           ))}
+          
+          <label>
+            <input
+              type="checkbox"
+              name="uneventful"
+              checked={!!formData.uneventful}
+              onChange={e => setFormData({
+                ...formData,
+                uneventful: e.target.checked
+              })}
+            />
+            Plan of care uneventful
+          </label>
           
           {/* NEW: Submit button with gradient background and hover effects */}
           
