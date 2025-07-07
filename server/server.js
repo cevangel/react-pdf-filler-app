@@ -73,7 +73,24 @@ app.post('/fill-form', async (req, res) => {
         console.warn(`⚠️ Skipping field "${fieldName}" due to error: ${fieldErr.message}`);
       }
     });
-
+if (templateName === "OASIS") {
+  //Handles OASIS specific fields here
+  const oasisFields = [
+    "startOfCareDate", "primaryDiagnosis", "functionalLevel",
+    //add other OASIS fields here
+  ];
+  oasisFields.forEach(fieldName => {
+  try{
+    const field = form.getField(fieldName);
+    if (field && field.constructor.name === 'PDFTextField') {
+      const value = req.body[fieldName] || "";
+      field.setText(value);
+    }
+  } catch (err) {
+    console.warn(`⚠️ Skipping field "${fieldName}" due to error: ${err.message}`);
+  }
+  });
+}
     // ⚠️ Do NOT call form.flatten() or updateAppearances
 
     const pdfBytes = await pdfDoc.save();
