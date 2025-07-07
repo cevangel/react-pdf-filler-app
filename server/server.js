@@ -105,7 +105,7 @@ if (templateName === "OASIS") {
   }
   });
 }
-    // ⚠️ Do NOT call form.flatten() or updateAppearances
+    form.updateFieldAppearances();
 
     const pdfBytes = await pdfDoc.save();
 
