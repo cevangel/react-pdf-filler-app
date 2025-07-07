@@ -16,6 +16,7 @@ function App() {
     { name: "startOfCareDate", label: "Start of Care Date" },
     { name: "primaryDiagnosis", label: "Primary Diagnosis" },
     { name: "functionalLevel", label: "Functional Level" },
+    { name: "checkbox", label: "Checkbox" },
     // ...add all OASIS-specific fields you want
   ];
 
