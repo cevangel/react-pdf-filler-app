@@ -1,5 +1,5 @@
 // Importing React's useState hook to manage state and axios for making HTTP requests
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 // Define the main component
@@ -39,6 +39,37 @@ function App() {
     CheckBox: true,
   });
 
+  const defaultOasisFormData = {
+    startOfCareDate: "",
+    primaryDiagnosis: "",
+    functionalLevel: "",
+    uneventful: true,
+    // ...add all your OASIS checkbox fields here, set to true for default checked
+  };
+
+  const defaultFormData = {
+    // PatientName removed for HIPAA safety in public version
+    // date: "", removed for HIPAA safety in public version 
+    diagnosis: 'M62.81',
+    bp: "",
+    pmh: "",
+    rom: "WFL",
+    timeIn: "",
+    mmt: "3+/5",
+    timeOut: "",
+    bedMob: "",
+    transfers: "",
+    gait: "",
+    reassessDate: "",
+    CheckBox: true,
+    // ...add any other default fields for your non-OASIS templates
+  };
+
+  const oasisCheckboxFields = [
+    "uneventful",
+    // ...other checkbox fields
+  ];
+
   // This function is triggered when a user types in any input field.
   const handleChange = (e) => {
     // Dynamically update the field that changed by spreading the old state and updating the field that matches the input's name.
@@ -73,6 +104,14 @@ function App() {
       console.error("Error submitting form:", err); // Show error in console if the request fails
     }
   };
+
+  useEffect(() => {
+    if (selectedTemplate === "OASIS") {
+      setFormData(defaultOasisFormData);
+    } else {
+      setFormData(defaultFormData);
+    }
+  }, [selectedTemplate]);
 
   // The component renders a form
   return (
@@ -177,6 +216,23 @@ function App() {
       </div>
     ))
 }
+          
+          {oasisCheckboxFields.map(field => (
+            <div key={field}>
+              <label>
+                <input
+                  type="checkbox"
+                  name={field}
+                  checked={!!formData[field]}
+                  onChange={e => setFormData({
+                    ...formData,
+                    [field]: e.target.checked
+                  })}
+                />
+                {field} {/* Or a more user-friendly label */}
+              </label>
+            </div>
+          ))}
           
           {/* NEW: Submit button with gradient background and hover effects */}
           
