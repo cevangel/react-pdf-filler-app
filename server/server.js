@@ -73,72 +73,14 @@ app.post('/fill-form', async (req, res) => {
         console.warn(`⚠️ Skipping field "${fieldName}" due to error: ${fieldErr.message}`);
       }
     });
-if (templateName === "OASIS") {
-  //Handles OASIS specific fields here
-  const oasisFields = [
-    "startOfCareDate", "primaryDiagnosis", "functionalLevel",
-    //add other OASIS fields here
-  ];
-  oasisFields.forEach(fieldName => {
-    try {
-      const checkboxes = form.getFields().filter(
-        f => f.getName().startsWith("uneventful")
-      );
-      checkboxes.forEach(checkbox => {
-        if (req.body.uneventful) {
-          checkbox.check();
-        } else {
-          checkbox.uncheck();
-        }
-      });
-    } catch (err) {
-      console.warn(`⚠️ Could not update 'uneventful' checkboxes: ${err.message}`);
-    }
-  try{
-    const field = form.getField(fieldName);
-    if (field && field.constructor.name === 'PDFTextField') {
-      const value = req.body[fieldName] || "";
-      field.setText(value);
-    }
-  } catch (err) {
-    console.warn(`⚠️ Skipping field "${fieldName}" due to error: ${err.message}`);
-  }
-  });
-}
+
     form.updateFieldAppearances();
-    form.flatten();
+
     const pdfBytes = await pdfDoc.save();
 
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename=filled-form.pdf',
-    });
-
-    res.send(Buffer.from(pdfBytes));
-  } catch (err) {
-    console.error("PDF generation error:", err);
-    res.status(500).send("Failed to fill PDF form");
-  }
-});
-
-app.post('/fill-test', async (req, res) => {
-  try {
-    const filePath = path.join(__dirname, 'templates', 'TestTemplate.pdf');
-    const existingPdfBytes = fs.readFileSync(filePath);
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-    const form = pdfDoc.getForm();
-    const field = form.getField('testField');
-    field.setText('123');
-
-    form.updateFieldAppearances();
-    // form.flatten(); // Optional: test with and without flatten
-
-    const pdfBytes = await pdfDoc.save();
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename=filled-test.pdf',
     });
 
     res.send(Buffer.from(pdfBytes));

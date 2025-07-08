@@ -12,22 +12,6 @@ function App() {
     setSelectedTemplate(e.target.value);
   }
 
-  const oasisFields = [
-    { name: "startOfCareDate", label: "Start of Care Date" },
-    { name: "primaryDiagnosis", label: "Primary Diagnosis" },
-    { name: "functionalLevel", label: "Functional Level" },
-    { name: "checkbox", label: "Checkbox" },
-    "emergentCare",
-    "AOSMC",
-    "falls",
-    "medListProvided",
-    "medListProvided2",
-    "healthLit",
-    "conductMentI",
-    "vaccGiven",
-    "naAdmission",
-  ];
-
   // useState hook creates a state variable 'formData' with various form fields.
   // setFormData is the function used to update this state.
   const [formData, setFormData] = useState({
@@ -47,24 +31,6 @@ function App() {
     CheckBox: true,
   });
 
-  const defaultOasisFormData = {
-    startOfCareDate: "",
-    primaryDiagnosis: "",
-    functionalLevel: "",
-    hasDiabetes: true,
-    needsAssistance: true,
-    uneventful: false,
-    emergentCare: "",
-    AOSMC: "",
-    falls: "",
-    medListProvided: "",
-    medListProvided2: "",
-    healthLit: "",
-    conductMentI: "",
-    vaccGiven: "",
-    naAdmission: "",
-  };
-
   const defaultFormData = {
     // PatientName removed for HIPAA safety in public version
     // date: "", removed for HIPAA safety in public version 
@@ -82,35 +48,6 @@ function App() {
     CheckBox: true,
     // ...add any other default fields for your non-OASIS templates
   };
-
-  const oasisCheckboxFields = [
-    "hasDiabetes",
-    "needsAssistance",
-    // ...all OASIS checkbox field names
-  ];
-
-  const zeroFields = [
-    "emergentCare",
-    "someOtherField2",
-    "AOMSC",
-    "falls",
-    // ...all text field names you want to fill with "0"
-  ];
-
-  const oneFields = [
-    "medListProvided",
-    "medListProvided2",
-    "healthLit",
-    "conductMentI",
-    "vaccGiven",
-,
-    // ...all text field names you want to fill with "0"
-  ];
-
-  const naFields = [
-    "naAdmission",
-    // ...all text field names you want to fill with "NA"
-  ];
 
   // This function is triggered when a user types in any input field.
   const handleChange = (e) => {
@@ -146,14 +83,6 @@ function App() {
       console.error("Error submitting form:", err); // Show error in console if the request fails
     }
   };
-
-  useEffect(() => {
-    if (selectedTemplate === "OASIS") {
-      setFormData(defaultOasisFormData);
-    } else {
-      setFormData(defaultFormData);
-    }
-  }, [selectedTemplate]);
 
   // The component renders a form
   return (
@@ -227,45 +156,21 @@ function App() {
         {/* NEW: Form section with proper spacing */}
         {/* px-6 py-4 = consistent padding, space-y-4 = vertical spacing between form elements */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {/* Only render fields you want the user to edit */}
-          <label>
-            Start of Care Date
-            <input
-              name="startOfCareDate"
-              value={formData.startOfCareDate}
-              onChange={handleChange}
-            />
-          </label>
-          {/* ...other user-editable fields... */}
-
-          {/* Render the uneventful master checkbox */}
-          <label>
-            <input
-              type="checkbox"
-              name="uneventful"
-              checked={!!formData.uneventful}
-              onChange={e => {
-                const checked = e.target.checked;
-                setFormData({
-                  ...formData,
-                  uneventful: checked,
-                  emergentCare: checked ? "0" : "",
-                  AOSMC: checked ? "0" : "",
-                  falls: checked ? "0" : "",
-                  medListProvided: checked ? "1" : "",
-                  medListProvided2: checked ? "1" : "",
-                  healthLit: checked ? "1" : "",
-                  conductMentI: checked ? "1" : "",
-                  vaccGiven: checked ? "1" : "",
-                  naAdmission: checked ? "NA" : "",
-                });
-              }}
-            />
-            Plan of care uneventful
-          </label>
-          
           {/* NEW: Submit button with gradient background and hover effects */}
-          
+          {Object.keys(formData).map((field) => (
+    <div key={field} className="space-y-1">
+      <label className="block text-sm font-medium text-gray-700 capitalize">
+        {field.replace(/([A-Z])/g, ' $1').trim()}:
+      </label>
+      <input
+        name={field}
+        placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
+        value={formData[field]}
+        onChange={handleChange}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+      />
+    </div>
+  ))}
           {/* w-full = full width, bg-gradient-to-r = right gradient, from-blue-600 to-indigo-600 = blue to indigo */}
           {/* text-white = white text, font-medium = 500 weight, py-3 px-4 = padding */}
           {/* rounded-md = medium border radius, hover:from-blue-700 hover:to-indigo-700 = darker on hover */}
