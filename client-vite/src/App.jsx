@@ -1,6 +1,6 @@
 // Importing React's useState hook to manage state and axios for making HTTP requests
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "axios"; //sends requests to servers
 
 // Define the main component
 function App() {
@@ -29,6 +29,11 @@ function App() {
     gait: "",
     reassessDate: "",
     CheckBox: true,
+    // OASIS-specific fields
+    eatingOralHygieneUpperBodyDressing: "",
+    toiletingBathingLowerBodyDressingFootwear: "",
+    stairs: "",
+    adlMedicalSafetySupervision: "",
   });
 
   const defaultFormData = {
@@ -46,7 +51,11 @@ function App() {
     gait: "",
     reassessDate: "",
     CheckBox: true,
-    // ...add any other default fields for your non-OASIS templates
+    // OASIS-specific fields
+    eatingOralHygieneUpperBodyDressing: "",
+    toiletingBathingLowerBodyDressingFootwear: "",
+    stairs: "",
+    adlMedicalSafetySupervision: "",
   };
 
   // This function is triggered when a user types in any input field.
@@ -156,21 +165,87 @@ function App() {
         {/* NEW: Form section with proper spacing */}
         {/* px-6 py-4 = consistent padding, space-y-4 = vertical spacing between form elements */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {/* NEW: Submit button with gradient background and hover effects */}
-          {Object.keys(formData).map((field) => (
-    <div key={field} className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700 capitalize">
-        {field.replace(/([A-Z])/g, ' $1').trim()}:
-      </label>
-      <input
-        name={field}
-        placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
-        value={formData[field]}
-        onChange={handleChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-      />
-    </div>
-  ))}
+          {/* Standard form fields for all templates */}
+          {Object.keys(formData)
+            .filter(field => !field.includes('eatingOralHygiene') && 
+                            !field.includes('toiletingBathing') && 
+                            !field.includes('stairs') && 
+                            !field.includes('adlMedical'))
+            .map((field) => (
+              <div key={field} className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 capitalize">
+                  {field.replace(/([A-Z])/g, ' $1').trim()}:
+                </label>
+                <input
+                  name={field}
+                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
+                  value={formData[field]}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+            ))}
+
+          {/* OASIS-specific form fields - only show when OASIS template is selected */}
+          {selectedTemplate === 'OASIS' && (
+            <>
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">OASIS-Specific Fields</h3>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Eating/Oral Hygiene/Upper Body Dressing:
+                </label>
+                <input
+                  name="eatingOralHygieneUpperBodyDressing"
+                  placeholder="Enter Eating/Oral Hygiene/Upper Body Dressing"
+                  value={formData.eatingOralHygieneUpperBodyDressing}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Toileting/Bathing/Lower Body Dressing/Footwear:
+                </label>
+                <input
+                  name="toiletingBathingLowerBodyDressingFootwear"
+                  placeholder="Enter Toileting/Bathing/Lower Body Dressing/Footwear"
+                  value={formData.toiletingBathingLowerBodyDressingFootwear}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Stairs:
+                </label>
+                <input
+                  name="stairs"
+                  placeholder="Enter Stairs"
+                  value={formData.stairs}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  ADL/Medical/Safety Supervision:
+                </label>
+                <input
+                  name="adlMedicalSafetySupervision"
+                  placeholder="Enter ADL/Medical/Safety Supervision"
+                  value={formData.adlMedicalSafetySupervision}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+            </>
+          )}
           {/* w-full = full width, bg-gradient-to-r = right gradient, from-blue-600 to-indigo-600 = blue to indigo */}
           {/* text-white = white text, font-medium = 500 weight, py-3 px-4 = padding */}
           {/* rounded-md = medium border radius, hover:from-blue-700 hover:to-indigo-700 = darker on hover */}

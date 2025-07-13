@@ -23,7 +23,7 @@ app.post('/fill-form', async (req, res) => {
 
     const fields = [
       "diagnosis", "reassessDate", "timeIn", "bedMob", "transfers", "bp", "pulse", "temp", 
-      "oxySat", "pmh", "mmt", "rom", "gait"
+      "oxySat", "pmh", "mmt", "rom", "gait", "eatingOralHygieneUpperBodyDressing", "toiletingBathingLowerBodyDressingFootwear", "stairs", "adlMedicalSafetySupervision"
     ];
 
     form.getFields().forEach(field => {
