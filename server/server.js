@@ -24,8 +24,13 @@ app.post('/fill-form', async (req, res) => {
 
     // List of text field names to fill
     const fields = [
-      "diagnosis", "reassessDate", "timeIn", "bedMob", "transfers", "bp", "pulse", "temp", "doctorAndNumber", "DME","recentHxandCC",
-      "oxySat","other", "pmh", "mmt", "rom", "gait", "eatingOralHygieneUpperBodyDressing", "toiletingBathingLowerBodyDressingFootwear", "stairs", "adlMedicalSafetySupervision"
+      "diagnosis", "reassessDate", "timeIn", "bedMob", "transfers", "bp", "pulse", "temp", 
+      "oxySat", "pmh", "mmt", "rom", "gait",
+      // OASIS-specific fields
+      "eatingOralHygieneUpperBodyDressing", "toiletingBathingLowerBodyDressingFootwear", 
+      "stairs", "adlMedicalSafetySupervision",
+      // New template fields
+      "doctorAndNumber", "recentHxandComplaint", "DME", "other"
     ];
 
     // Log all field names and their types for debugging
@@ -73,6 +78,7 @@ app.post('/fill-form', async (req, res) => {
 
         if (maybeField && maybeField.constructor.name === 'PDFTextField') {
           const value = req.body[fieldName] || "Test"; // Use provided value or fallback
+          console.log(`✅ Setting field "${fieldName}" to value: "${value}"`); // Debug log
           maybeField.setText(value); // Set text field value
         } else {
           // Warn if field is not a text field or missing

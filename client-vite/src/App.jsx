@@ -34,6 +34,11 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // New template fields
+    doctorAndNumber: "",
+    recentHxandComplaint: "",
+    DME: "",
+    other: "",
   });
 
   const defaultFormData = {
@@ -56,6 +61,11 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // New template fields
+    doctorAndNumber: "",
+    recentHxandComplaint: "",
+    DME: "",
+    other: "",
   };
 
   // This function is triggered when a user types in any input field.
