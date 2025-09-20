@@ -138,6 +138,7 @@ function App() {
             <option value="ExtendedTemplate">Extended Template</option>
             <option value="AmericareInfiniteTemplate">Americare/Infinite</option>
             <option value="OASIS">OASIS DC</option>
+            <option value="RevivalTemplate">Revival Template</option>
           </select>
         </div>
 
