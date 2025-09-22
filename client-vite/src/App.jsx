@@ -19,6 +19,7 @@ function App() {
     // date: "", removed for HIPAA safety in public version 
     diagnosis: 'M62.81',
     bp: "",
+    pulse: "",
     pmh: "",
     rom: "WFL",
     timeIn: "",
@@ -36,7 +37,7 @@ function App() {
     adlMedicalSafetySupervision: "",
     // New template fields
     doctorAndNumber: "",
-    recentHxandComplaint: "",
+    recentHxAndCC: "",
     DME: "",
     other: "",
   });
@@ -63,7 +64,7 @@ function App() {
     adlMedicalSafetySupervision: "",
     // New template fields
     doctorAndNumber: "",
-    recentHxandComplaint: "",
+    recentHxAndCC: "",
     DME: "",
     other: "",
   };
@@ -81,7 +82,7 @@ function App() {
     try {
       // Send formData to the backend endpoint using POST
       const response = await axios.post(
-        "https://react-pdf-filler-app.onrender.com/fill-form", 
+        "http://localhost:3001/fill-form", 
       {
         templateName: selectedTemplate,
         ...formData

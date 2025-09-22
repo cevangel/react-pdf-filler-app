@@ -30,13 +30,20 @@ app.post('/fill-form', async (req, res) => {
       "eatingOralHygieneUpperBodyDressing", "toiletingBathingLowerBodyDressingFootwear", 
       "stairs", "adlMedicalSafetySupervision",
       // New template fields
-      "doctorAndNumber", "recentHxandComplaint", "DME", "other"
+      "doctorAndNumber", "recentHxAndCC", "DME", "other"
     ];
 
     // Log all field names and their types for debugging
+    console.log("=== PDF FIELDS DEBUG ===");
     form.getFields().forEach(field => {
       console.log(field.getName(), field.constructor.name);
     });
+    console.log("=== END PDF FIELDS ===");
+    
+    // Check specifically for the problematic fields
+    console.log("=== CHECKING SPECIFIC FIELDS ===");
+    console.log("Looking for 'doctorAndNumber':", req.body.doctorAndNumber);
+    console.log("Looking for 'recentHxAndCC':", req.body.recentHxAndCC);
 
     // List of checkbox field names to fill
     const checkboxes = ["CheckBox", "Checkbox"];
