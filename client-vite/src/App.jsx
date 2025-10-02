@@ -13,6 +13,42 @@ function App() {
   // add dropdown menu for user to choose template
   const[selectedTemplate, setSelectedTemplate] = useState('GirlingTemplate');
 
+  // Optional: Warm-cache all templates on mount for better offline experience
+  useEffect(() => {
+    const warmCache = async () => {
+      if ('serviceWorker' in navigator && 'caches' in window) {
+        console.log('App: Warming cache for all templates...');
+        
+        const templateUrls = [
+          '/templates/AmericareInfiniteTemplate.pdf',
+          '/templates/ExtendedTemplate.pdf',
+          '/templates/GirlingTemplate.pdf',
+          '/templates/OASIS.pdf',
+          '/templates/OASISprev.pdf',
+          '/templates/RevivalTemplate.pdf',
+          '/templates/TestTemplate.pdf',
+          '/templates/YourChoiceTemplate.pdf'
+        ];
+
+        // Prefetch templates in background (best-effort)
+        templateUrls.forEach(async (url) => {
+          try {
+            const response = await fetch(url, { cache: 'reload' });
+            if (response.ok) {
+              console.log('App: Successfully warmed cache for:', url);
+            }
+          } catch (error) {
+            console.log('App: Failed to warm cache for:', url, error.message);
+          }
+        });
+      }
+    };
+
+    // Warm cache after a short delay to not interfere with initial load
+    const timeoutId = setTimeout(warmCache, 2000);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   const handleTemplateChange = (e) => {
     setSelectedTemplate(e.target.value);
   }
@@ -337,13 +373,6 @@ function App() {
       </div>
     </div>
   );
-}
-
-// Register SW to enable offline caching (PWA)
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(console.error);
-  });
 }
 
 export default App; // Make this component available for use in other files

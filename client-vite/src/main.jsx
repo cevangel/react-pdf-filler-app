@@ -9,11 +9,32 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
-// Register SW to enable offline caching (PWA)
+// Register Service Worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    console.log('Main: Attempting to register service worker...');
+    
     navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered', reg.scope))
-      .catch(err => console.error('SW registration failed', err));
+      .then((registration) => {
+        console.log('Main: SW registered successfully:', registration.scope);
+        console.log('Main: SW state:', registration.active ? 'active' : 'installing');
+        
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          console.log('Main: SW update found');
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('Main: New SW installed, reloading page');
+              window.location.reload();
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('Main: SW registration failed:', error);
+      });
   });
+} else {
+  console.log('Main: Service workers not supported');
 }
