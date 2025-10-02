@@ -1,0 +1,5 @@
+/sw.js /sw.js 200
+/manifest.webmanifest /manifest.webmanifest 200
+/templates/* /templates/:splat 200
+/* /index.html 200
+
