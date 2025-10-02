@@ -1,6 +1,11 @@
 // Importing React's useState hook to manage state and axios for making HTTP requests
 import { useState, useEffect } from "react";
 import axios from "axios"; //sends requests to servers
+// CHANGED: We no longer POST to a server. You can safely remove axios later.
+//          Keeping it now so your file still matches your original structure.
+
+// CHANGED: Import pdf-lib for client-side PDF fill & flatten (no server needed).
+import { PDFDocument, StandardFonts } from "pdf-lib";
 
 // Define the main component
 function App() {
@@ -75,32 +80,81 @@ function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // This function handles form submission
+  // CHANGED: Pure client-side submit handler using pdf-lib.
+  //          Replaces the previous axios POST to your server.
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form behavior (page reload)
 
     try {
-      // Send formData to the backend endpoint using POST
-      const response = await axios.post(
-        "http://localhost:3001/fill-form", 
-      {
-        templateName: selectedTemplate,
-        ...formData
-      }, 
-      {
-        responseType: "blob", // Expect a PDF blob (binary large object)
-      }
-    );
+      // CHANGED: Load the selected template directly from /public/templates
+      // Place your PDFs at: client-vite/public/templates/<TemplateName>.pdf
+      const templateUrl = `/templates/${selectedTemplate}.pdf`;
+      const templateBytes = await fetch(templateUrl).then((r) => r.arrayBuffer());
 
-      // Create a downloadable PDF from the blob response
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob); // Create a temp URL
-      const link = document.createElement("a"); // Create a download link
+      // CHANGED: Load into a PDFDocument we can edit
+      const pdfDoc = await PDFDocument.load(templateBytes, { updateMetadata: false });
+
+      // CHANGED: Embed a base font to render consistent appearances
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      // CHANGED: Try to fill AcroForm fields by matching names to your formData keys.
+      // Any key that doesn't exist on the PDF will be skipped safely.
+      let usedAcroForm = false;
+      try {
+        const form = pdfDoc.getForm();
+
+        // Attempt to set text fields
+        for (const [key, value] of Object.entries(formData)) {
+          // Skip non-texty values if needed (you can keep pulse etc. if present in PDF)
+          // We try text field first, then checkbox.
+          try {
+            const tf = form.getTextField(key);
+            tf.setText(value == null ? "" : String(value));
+            tf.updateAppearances(font, { fontSize: 9 });
+            usedAcroForm = true;
+            continue; // move to next key if text field found
+          } catch {
+            // Not a text field; try as a checkbox
+          }
+
+          try {
+            const cb = form.getCheckBox(key);
+            // Accept booleans or "true"/"false" strings
+            const isChecked =
+              typeof value === "boolean"
+                ? value
+                : String(value).toLowerCase() === "true";
+            isChecked ? cb.check() : cb.uncheck();
+            usedAcroForm = true;
+            continue;
+          } catch {
+            // Not a checkbox either — ignore silently
+          }
+        }
+
+        // Flatten only if we actually used form fields
+        if (usedAcroForm) {
+          form.flatten(); // CHANGED: bake values into the page so they print everywhere
+        }
+      } catch {
+        // CHANGED: No AcroForm present — optional: draw text at coordinates.
+        // If your template(s) lack fields, we can add a coordinate map fallback.
+        // For now we just skip; ask and I’ll wire a drawText fallback map for you.
+      }
+
+      // CHANGED: Save & trigger a download right in the browser (no server round-trip)
+      const bytes = await pdfDoc.save();
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
       link.href = url;
-      link.download = "filled_form.pdf"; // Set the file name
-      link.click(); // Trigger the download
+      link.download = `${selectedTemplate}_filled.pdf`; // CHANGED: useful filename per template
+      link.click();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Error submitting form:", err); // Show error in console if the request fails
+      // CHANGED: Client-side error handling (e.g., missing PDF in /public/templates)
+      console.error("Error generating PDF in the browser:", err);
+      alert("Sorry, something went wrong generating the PDF.");
     }
   };
 
@@ -283,6 +337,13 @@ function App() {
       </div>
     </div>
   );
+}
+
+// Register SW to enable offline caching (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(console.error);
+  });
 }
 
 export default App; // Make this component available for use in other files
