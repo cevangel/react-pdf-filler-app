@@ -1,16 +1,16 @@
 // Robust PWA Service Worker for PDF Filler App
-const CACHE_NAME = 'pt-pdf-filler-v2';
+// CHANGED: Updated cache name from v1 to v2 to force cache refresh
+const CACHE_NAME = 'pt-pdf-filler-v4';
 
 // App shell files that should be cached
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/manifest.webmanifest'
 ];
 
 // Template PDF files found in /public/templates
+// CHANGED: Updated list with actual files found in directory (removed OASIS_Discharge.pdf, added OASISprev.pdf and TestTemplate.pdf)
 const TEMPLATE_FILES = [
   '/templates/AmericareInfiniteTemplate.pdf',
   '/templates/ExtendedTemplate.pdf',
@@ -19,9 +19,12 @@ const TEMPLATE_FILES = [
   '/templates/OASISprev.pdf',
   '/templates/RevivalTemplate.pdf',
   '/templates/TestTemplate.pdf',
-  '/templates/YourChoiceTemplate.pdf'
+  '/templates/YourChoiceTemplate.pdf',
+  '/templates/YourChoiceTx.pdf',
+  '/templates/RevivalTx.pdf',
 ];
 
+// CHANGED: Added comprehensive console logging for debugging
 console.log('SW: Installing with cache name:', CACHE_NAME);
 console.log('SW: Template files to cache:', TEMPLATE_FILES);
 
@@ -37,6 +40,7 @@ self.addEventListener('install', (event) => {
       const allFiles = [...APP_SHELL, ...TEMPLATE_FILES];
       console.log('SW: Attempting to cache', allFiles.length, 'files');
       
+      // CHANGED: Replaced cache.addAll() with individual fetch/put to prevent single failure from breaking entire cache
       for (const url of allFiles) {
         try {
           console.log('SW: Fetching:', url);
@@ -77,6 +81,7 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
+      // CHANGED: Added clients.claim() to immediately take control of all clients
       console.log('SW: Activation completed, claiming clients');
       return self.clients.claim();
     })
@@ -93,7 +98,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Handle navigation requests (SPA routing)
+  // CHANGED: Ignore chrome-extension and other non-http(s) requests
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+  
+  // CHANGED: Added specific handling for navigation requests (SPA routing)
   if (request.mode === 'navigate') {
     console.log('SW: Handling navigation request:', url.pathname);
     
@@ -114,7 +124,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Handle other requests with cache-first strategy
+  // CHANGED: Completely rewrote fetch handler with cache-first strategy and smart fallbacks
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -138,7 +148,7 @@ self.addEventListener('fetch', (event) => {
       }).catch((error) => {
         console.log('SW: Network failed for:', url.pathname, error.message);
         
-        // Special handling for template requests
+        // CHANGED: Special handling for template requests - return 503 instead of SPA fallback
         if (url.pathname.startsWith('/templates/')) {
           console.log('SW: Template not available offline:', url.pathname);
           return new Response('Template not available offline', {

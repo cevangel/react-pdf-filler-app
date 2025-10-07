@@ -12,9 +12,27 @@ function App() {
   
   // add dropdown menu for user to choose template
   const[selectedTemplate, setSelectedTemplate] = useState('GirlingTemplate');
+  
+  // Online/offline status for HIPAA field visibility
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Optional: Warm-cache all templates on mount for better offline experience
+  // Online/offline detection and warm-cache
   useEffect(() => {
+    // Set up online/offline event listeners
+    const handleOnline = () => {
+      setIsOnline(true);
+      console.log('App: Connection restored - HIPAA fields hidden');
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      console.log('App: Connection lost - HIPAA fields visible');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Warm-cache all templates
     const warmCache = async () => {
       if ('serviceWorker' in navigator && 'caches' in window) {
         console.log('App: Warming cache for all templates...');
@@ -27,7 +45,9 @@ function App() {
           '/templates/OASISprev.pdf',
           '/templates/RevivalTemplate.pdf',
           '/templates/TestTemplate.pdf',
-          '/templates/YourChoiceTemplate.pdf'
+          '/templates/YourChoiceTemplate.pdf',
+          '/templates/YourChoiceTx.pdf',
+          '/templates/RevivalTx.pdf',
         ];
 
         // Prefetch templates in background (best-effort)
@@ -46,7 +66,12 @@ function App() {
 
     // Warm cache after a short delay to not interfere with initial load
     const timeoutId = setTimeout(warmCache, 2000);
-    return () => clearTimeout(timeoutId);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleTemplateChange = (e) => {
@@ -56,8 +81,10 @@ function App() {
   // useState hook creates a state variable 'formData' with various form fields.
   // setFormData is the function used to update this state.
   const [formData, setFormData] = useState({
-    // PatientName removed for HIPAA safety in public version
-    // date: "", removed for HIPAA safety in public version 
+    // HIPAA-sensitive fields (only visible when offline)
+    patientName: "",
+    date: "",
+    // Non-sensitive fields
     diagnosis: 'M62.81',
     bp: "",
     pulse: "",
@@ -84,8 +111,10 @@ function App() {
   });
 
   const defaultFormData = {
-    // PatientName removed for HIPAA safety in public version
-    // date: "", removed for HIPAA safety in public version 
+    // HIPAA-sensitive fields (only visible when offline)
+    patientName: "",
+    date: "",
+    // Non-sensitive fields
     diagnosis: 'M62.81',
     bp: "",
     pmh: "",
@@ -230,35 +259,42 @@ function App() {
             <option value="AmericareInfiniteTemplate">Americare/Infinite</option>
             <option value="OASIS">OASIS DC</option>
             <option value="RevivalTemplate">Revival Template</option>
+            <option value="YourChoiceTx">Your Choice Treatement</option>
+            <option value="RevivalTx">Revival Treatement</option>
           </select>
         </div>
 
-        {/* NEW: HIPAA warning section with red background and icon */}
-        <div className="px-6 py-4 bg-red-50 border-b border-red-200">
-          {/* NEW: Flexbox layout for icon and text alignment */}
-          {/* flex items-start = flexbox with items aligned to start */}
+        {/* Dynamic HIPAA warning based on connection status */}
+        <div className={`px-6 py-4 border-b ${isOnline ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
           <div className="flex items-start">
-            {/* NEW: Warning icon container */}
-            {/* flex-shrink-0 = prevent icon from shrinking */}
             <div className="flex-shrink-0">
-              {/* NEW: SVG warning icon with red color */}
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              {/* Dynamic icon based on connection status */}
+              {isOnline ? (
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
             </div>
-            {/* NEW: Text content with left margin */}
-            {/* ml-3 = margin left 0.75rem */}
             <div className="ml-3">
-              {/* NEW: Warning title with red color and medium font weight */}
-              {/* text-sm = 14px, text-red-700 = dark red, font-medium = 500 weight */}
-              <p className="text-sm text-red-700 font-medium">
-                HIPAA Notice
+              <p className={`text-sm font-medium ${isOnline ? 'text-red-700' : 'text-green-700'}`}>
+                {isOnline ? 'HIPAA Notice - Online Mode' : 'HIPAA Notice - Offline Mode'}
               </p>
-              {/* NEW: Warning description with smaller text and lighter red */}
-              {/* text-xs = 12px, text-red-600 = medium red, mt-1 = margin top 0.25rem */}
-              <p className="text-xs text-red-600 mt-1">
-                Do NOT enter identifying patient information (name, address, DOB). 
-                This demo is not HIPAA compliant. Enter PHI manually after downloading.
+              <p className={`text-xs mt-1 ${isOnline ? 'text-red-600' : 'text-green-600'}`}>
+                {isOnline ? (
+                  <>
+                    <strong>ONLINE:</strong> Patient name and date fields are hidden for HIPAA compliance. 
+                    This demo is not HIPAA compliant when connected to the internet.
+                  </>
+                ) : (
+                  <>
+                    <strong>OFFLINE:</strong> Patient name and date fields are now visible for offline use. 
+                    Data stays on your device and is not transmitted over the network.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -267,12 +303,45 @@ function App() {
         {/* NEW: Form section with proper spacing */}
         {/* px-6 py-4 = consistent padding, space-y-4 = vertical spacing between form elements */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+          {/* HIPAA-sensitive fields - only visible when offline */}
+          {!isOnline && (
+            <>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Patient Name:
+                </label>
+                <input
+                  name="patientName"
+                  placeholder="Enter patient name"
+                  value={formData.patientName}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Date:
+                </label>
+                <input
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+            </>
+          )}
+
           {/* Standard form fields for all templates */}
           {Object.keys(formData)
             .filter(field => !field.includes('eatingOralHygiene') && 
                             !field.includes('toiletingBathing') && 
                             !field.includes('stairs') && 
-                            !field.includes('adlMedical'))
+                            !field.includes('adlMedical') &&
+                            field !== 'patientName' && 
+                            field !== 'date')
             .map((field) => (
               <div key={field} className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700 capitalize">
