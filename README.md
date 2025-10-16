@@ -28,6 +28,15 @@ react-pdf-filler-app/
 
 
 ---
+## Running the application:
+Run the Development Server
+1. Navigate to the Client Directory
+cd client-vite
+2. Install Dependencies (if needed)
+npm install
+3. Start the Development Server
+npm run dev
+This will start the Vite development server, typically on http://localhost:5173
 
 ## 📦 Setup Instructions
 

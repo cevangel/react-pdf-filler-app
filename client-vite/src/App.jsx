@@ -15,6 +15,9 @@ function App() {
   
   // Online/offline status for HIPAA field visibility
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Manual offline mode for HIPAA protection
+  const [manualOfflineMode, setManualOfflineMode] = useState(false);
 
   // Online/offline detection and warm-cache
   useEffect(() => {
@@ -48,6 +51,7 @@ function App() {
           '/templates/YourChoiceTemplate.pdf',
           '/templates/YourChoiceTx.pdf',
           '/templates/RevivalTx.pdf',
+          '/templates/InfiniteTx.pdf',
         ];
 
         // Prefetch templates in background (best-effort)
@@ -78,6 +82,15 @@ function App() {
     setSelectedTemplate(e.target.value);
   }
 
+  // Toggle manual offline mode for HIPAA protection
+  const toggleOfflineMode = () => {
+    setManualOfflineMode(!manualOfflineMode);
+    console.log('App: Manual offline mode toggled:', !manualOfflineMode);
+  }
+
+  // Combined logic: show HIPAA fields when either actually offline OR manually in offline mode
+  const showHipaaFields = !isOnline || manualOfflineMode;
+
   // useState hook creates a state variable 'formData' with various form fields.
   // setFormData is the function used to update this state.
   const [formData, setFormData] = useState({
@@ -85,6 +98,7 @@ function App() {
     patientName: "",
     date: "",
     // Non-sensitive fields
+    treatmentType: "",
     diagnosis: 'M62.81',
     bp: "",
     pulse: "",
@@ -115,6 +129,7 @@ function App() {
     patientName: "",
     date: "",
     // Non-sensitive fields
+    treatmentType: "",
     diagnosis: 'M62.81',
     bp: "",
     pmh: "",
@@ -213,7 +228,25 @@ function App() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${selectedTemplate}_filled.pdf`; // CHANGED: useful filename per template
+      
+      // Generate filename based on online/offline status and available data
+      let filename;
+      if (showHipaaFields && formData.patientName && formData.treatmentType && formData.date) {
+        // When HIPAA fields are visible and filled: "[patientName] [treatment type] [date]"
+        const cleanPatientName = formData.patientName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        const cleanTreatmentType = formData.treatmentType.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        const cleanDate = formData.date.replace(/[^a-zA-Z0-9]/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3');
+        filename = `${cleanPatientName} ${cleanTreatmentType} ${cleanDate}.pdf`;
+      } else if (formData.treatmentType) {
+        // When treatment type is available but not HIPAA fields: "[treatment type] [template]"
+        const cleanTreatmentType = formData.treatmentType.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        filename = `${cleanTreatmentType} ${selectedTemplate}.pdf`;
+      } else {
+        // Default fallback: "[template]_filled.pdf"
+        filename = `${selectedTemplate}_filled.pdf`;
+      }
+      
+      link.download = filename;
       link.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -257,42 +290,72 @@ function App() {
             <option value="YourChoiceTemplate">Your Choice Template</option>
             <option value="ExtendedTemplate">Extended Template</option>
             <option value="AmericareInfiniteTemplate">Americare/Infinite</option>
-            <option value="OASIS">OASIS DC</option>
+            <option value="OASISDC">OASIS DC</option>
             <option value="RevivalTemplate">Revival Template</option>
             <option value="YourChoiceTx">Your Choice Treatement</option>
             <option value="RevivalTx">Revival Treatement</option>
           </select>
+          
+          {/* Offline Function Button */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={toggleOfflineMode}
+              className={`w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${
+                manualOfflineMode
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-2 border-green-600'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-2 border-gray-300'
+              }`}
+            >
+              {manualOfflineMode ? (
+                <>
+                  🔒 Offline Mode Active - HIPAA Protected
+                </>
+              ) : (
+                <>
+                  🌐 Enable Offline Function (HIPAA Safe Mode)
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-1 text-center">
+              {manualOfflineMode 
+                ? "All data stays on your device - no network transmission" 
+                : "Click to work offline and protect patient data"
+              }
+            </p>
+          </div>
         </div>
 
-        {/* Dynamic HIPAA warning based on connection status */}
-        <div className={`px-6 py-4 border-b ${isOnline ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+        {/* Dynamic HIPAA warning based on connection status and manual mode */}
+        <div className={`px-6 py-4 border-b ${showHipaaFields ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              {/* Dynamic icon based on connection status */}
-              {isOnline ? (
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              ) : (
+              {/* Dynamic icon based on HIPAA field visibility */}
+              {showHipaaFields ? (
                 <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               )}
             </div>
             <div className="ml-3">
-              <p className={`text-sm font-medium ${isOnline ? 'text-red-700' : 'text-green-700'}`}>
-                {isOnline ? 'HIPAA Notice - Online Mode' : 'HIPAA Notice - Offline Mode'}
+              <p className={`text-sm font-medium ${showHipaaFields ? 'text-green-700' : 'text-red-700'}`}>
+                {showHipaaFields ? 'HIPAA Protected Mode Active' : 'HIPAA Notice - Online Mode'}
               </p>
-              <p className={`text-xs mt-1 ${isOnline ? 'text-red-600' : 'text-green-600'}`}>
-                {isOnline ? (
+              <p className={`text-xs mt-1 ${showHipaaFields ? 'text-green-600' : 'text-red-600'}`}>
+                {showHipaaFields ? (
                   <>
-                    <strong>ONLINE:</strong> Patient name and date fields are hidden for HIPAA compliance. 
-                    This demo is not HIPAA compliant when connected to the internet.
+                    <strong>HIPAA PROTECTED:</strong> Patient name and date fields are visible. 
+                    {manualOfflineMode ? ' Manual offline mode enabled - ' : ' Device offline - '}
+                    All data stays on your device and is not transmitted over the network.
                   </>
                 ) : (
                   <>
-                    <strong>OFFLINE:</strong> Patient name and date fields are now visible for offline use. 
-                    Data stays on your device and is not transmitted over the network.
+                    <strong>ONLINE:</strong> Patient name and date fields are hidden for HIPAA compliance. 
+                    Use the "Offline Function" button above to enable HIPAA-safe mode.
                   </>
                 )}
               </p>
@@ -303,8 +366,8 @@ function App() {
         {/* NEW: Form section with proper spacing */}
         {/* px-6 py-4 = consistent padding, space-y-4 = vertical spacing between form elements */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {/* HIPAA-sensitive fields - only visible when offline */}
-          {!isOnline && (
+          {/* HIPAA-sensitive fields - visible when offline OR manual offline mode */}
+          {showHipaaFields && (
             <>
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -334,6 +397,26 @@ function App() {
             </>
           )}
 
+          {/* Treatment Type field - always visible */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Treatment Type:
+            </label>
+            <select
+              name="treatmentType"
+              value={formData.treatmentType}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Select treatment type...</option>
+              <option value="IE">Initial Evaluation</option>
+              <option value="Tx">Treatment</option>
+              <option value="ReAssess">Reassessment</option>
+              <option value="DC">Discharge Summary</option>
+              <option value="ReEval">Re-evaluation</option>
+            </select>
+          </div>
+
           {/* Standard form fields for all templates */}
           {Object.keys(formData)
             .filter(field => !field.includes('eatingOralHygiene') && 
@@ -341,7 +424,8 @@ function App() {
                             !field.includes('stairs') && 
                             !field.includes('adlMedical') &&
                             field !== 'patientName' && 
-                            field !== 'date')
+                            field !== 'date' &&
+                            field !== 'treatmentType')
             .map((field) => (
               <div key={field} className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700 capitalize">
