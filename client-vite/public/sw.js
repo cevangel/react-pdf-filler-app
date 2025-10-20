@@ -1,6 +1,6 @@
 // Robust PWA Service Worker for PDF Filler App
 // CHANGED: Updated cache name from v1 to v2 to force cache refresh
-const CACHE_NAME = 'pt-pdf-filler-v5';
+const CACHE_NAME = 'pt-pdf-filler-v7';
 
 // App shell files that should be cached
 const APP_SHELL = [
@@ -22,6 +22,10 @@ const TEMPLATE_FILES = [
   '/templates/YourChoiceTemplate.pdf',
   '/templates/YourChoiceTx.pdf',
   '/templates/RevivalTx.pdf',
+  '/templates/InfiniteTx.pdf',
+  '/templates/ReAssessRevival.pdf',
+  '/templates/ReAssessInfinite.pdf',
+  '/templates/DischargeRevival.pdf',
 ];
 
 // CHANGED: Added comprehensive console logging for debugging

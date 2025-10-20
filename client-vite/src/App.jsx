@@ -52,6 +52,9 @@ function App() {
           '/templates/YourChoiceTx.pdf',
           '/templates/RevivalTx.pdf',
           '/templates/InfiniteTx.pdf',
+          '/templates/ReAssessRevival.pdf',
+          '/templates/ReAssessInfinite.pdf',
+          '/templates/DischargeRevival.pdf',
         ];
 
         // Prefetch templates in background (best-effort)
@@ -117,6 +120,10 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // ReAssess-specific fields
+    continuingFunctionalProblems: "",
+    progressMadeTowardPreviousGoals: "",
+    revisedGoals: "",
     // New template fields
     doctorAndNumber: "",
     recentHxAndCC: "",
@@ -147,6 +154,10 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // ReAssess-specific fields
+    continuingFunctionalProblems: "",
+    progressMadeTowardPreviousGoals: "",
+    revisedGoals: "",
     // New template fields
     doctorAndNumber: "",
     recentHxAndCC: "",
@@ -294,6 +305,10 @@ function App() {
             <option value="RevivalTemplate">Revival Template</option>
             <option value="YourChoiceTx">Your Choice Treatement</option>
             <option value="RevivalTx">Revival Treatement</option>
+            <option value="InfiniteTx">Infinite Treatement</option>
+            <option value="ReAssessRevival">ReAssess Revival</option>
+            <option value="ReAssessInfinite">ReAssess Infinite</option>
+            <option value="DischargeRevival">Discharge Revival</option>
           </select>
           
           {/* Offline Function Button */}
@@ -425,7 +440,10 @@ function App() {
                             !field.includes('adlMedical') &&
                             field !== 'patientName' && 
                             field !== 'date' &&
-                            field !== 'treatmentType')
+                            field !== 'treatmentType' &&
+                            field !== 'continuingFunctionalProblems' &&
+                            field !== 'progressMadeTowardPreviousGoals' &&
+                            field !== 'revisedGoals')
             .map((field) => (
               <div key={field} className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700 capitalize">
@@ -497,6 +515,57 @@ function App() {
                   value={formData.adlMedicalSafetySupervision}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+            </>
+          )}
+
+          {/* ReAssess-specific form fields - only show when ReAssessInfinite template is selected */}
+          {selectedTemplate === 'ReAssessInfinite' && (
+            <>
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">ReAssessment Fields</h3>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Continuing Functional Problems:
+                </label>
+                <textarea
+                  name="continuingFunctionalProblems"
+                  placeholder="Enter continuing functional problems..."
+                  value={formData.continuingFunctionalProblems}
+                  onChange={handleChange}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-vertical"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Progress Made Toward Previous Goals:
+                </label>
+                <textarea
+                  name="progressMadeTowardPreviousGoals"
+                  placeholder="Enter progress made toward previous goals..."
+                  value={formData.progressMadeTowardPreviousGoals}
+                  onChange={handleChange}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-vertical"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Revised Goals:
+                </label>
+                <textarea
+                  name="revisedGoals"
+                  placeholder="Enter revised goals..."
+                  value={formData.revisedGoals}
+                  onChange={handleChange}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-vertical"
                 />
               </div>
             </>
