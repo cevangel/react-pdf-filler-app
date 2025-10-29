@@ -18,6 +18,10 @@ function App() {
   
   // Manual offline mode for HIPAA protection
   const [manualOfflineMode, setManualOfflineMode] = useState(false);
+  
+  // Infographic modal state
+  const [showInfographic, setShowInfographic] = useState(false);
+  const [infographicField, setInfographicField] = useState('');
 
   // Online/offline detection and warm-cache
   useEffect(() => {
@@ -81,6 +85,28 @@ function App() {
     };
   }, []);
 
+  // Auto-fill date with today's date on mount (only if empty)
+  useEffect(() => {
+    setFormData(prev => {
+      if (!prev.date) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        return { ...prev, date: dateString };
+      }
+      return prev;
+    });
+  }, []);
+
+  // Auto-select "Discharge Summary" treatment type when OASIS DC template is selected
+  useEffect(() => {
+    if (selectedTemplate === 'OASISDC') {
+      setFormData(prev => ({ ...prev, treatmentType: 'DC' }));
+    }
+  }, [selectedTemplate]);
+
   const handleTemplateChange = (e) => {
     setSelectedTemplate(e.target.value);
   }
@@ -120,6 +146,21 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // OASIS DC additional fields
+    noPressureUlcer: false,
+    pressureUlcerNum: "",
+    ADLMedSup: "",
+    grooming: "",
+    independentAOx3: false,
+    // PDF fields set by independentAOx3 checkbox (managed programmatically)
+    indep: false,
+    dischageDisp: "",
+    bims3: "",
+    bims2: "",
+    bims1: "",
+    msChange: "",
+    ms0: "",
+    indep0: "",
     // ReAssess-specific fields
     continuingFunctionalProblems: "",
     progressMadeTowardPreviousGoals: "",
@@ -154,6 +195,21 @@ function App() {
     toiletingBathingLowerBodyDressingFootwear: "",
     stairs: "",
     adlMedicalSafetySupervision: "",
+    // OASIS DC additional fields
+    noPressureUlcer: false,
+    pressureUlcerNum: "",
+    ADLMedSup: "",
+    grooming: "",
+    independentAOx3: false,
+    // PDF fields set by independentAOx3 checkbox (managed programmatically)
+    indep: false,
+    dischageDisp: "",
+    bims3: "",
+    bims2: "",
+    bims1: "",
+    msChange: "",
+    ms0: "",
+    indep0: "",
     // ReAssess-specific fields
     continuingFunctionalProblems: "",
     progressMadeTowardPreviousGoals: "",
@@ -167,8 +223,43 @@ function App() {
 
   // This function is triggered when a user types in any input field.
   const handleChange = (e) => {
-    // Dynamically update the field that changed by spreading the old state and updating the field that matches the input's name.
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    // Handle checkbox inputs
+    if (type === 'checkbox') {
+      // Special handling for pressure ulcer checkbox
+      if (name === 'noPressureUlcer') {
+        setFormData(prev => ({ 
+          ...prev, 
+          noPressureUlcer: checked,
+          pressureUlcerNum: checked ? "0" : ""
+        }));
+      } else if (name === 'independentAOx3') {
+        // Special handling for Independent, AOx3 checkbox
+        setFormData(prev => ({
+          ...prev,
+          independentAOx3: checked,
+          indep: checked,
+          dischageDisp: checked ? "1" : "",
+          bims3: checked ? "3" : "",
+          bims2: checked ? "2" : "",
+          bims1: checked ? "1" : "",
+          msChange: checked ? "1" : "",
+          ms0: checked ? "0" : "",
+          indep0: checked ? "0" : ""
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: checked }));
+      }
+    } else {
+      // Handle regular inputs and dropdowns
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+  
+  // Function to show infographic for Bed Mob/Transfers/Gait
+  const showInfographicHelper = (fieldName) => {
+    setInfographicField(fieldName);
+    setShowInfographic(true);
   };
 
   // CHANGED: Pure client-side submit handler using pdf-lib.
@@ -194,8 +285,20 @@ function App() {
       try {
         const form = pdfDoc.getForm();
 
+        // Extract month, day, year from date field with spaces between characters
+        const dateData = { ...formData };
+        if (formData.date) {
+          const dateParts = formData.date.split('-');
+          if (dateParts.length === 3) {
+            // Add spaces between each character for formatting
+            dateData.month = dateParts[1].split('').join(' '); // YYYY-MM-DD format
+            dateData.day = dateParts[2].split('').join(' ');
+            dateData.year = dateParts[0].split('').join(' ');
+          }
+        }
+
         // Attempt to set text fields
-        for (const [key, value] of Object.entries(formData)) {
+        for (const [key, value] of Object.entries(dateData)) {
           // Skip non-texty values if needed (you can keep pulse etc. if present in PDF)
           // We try text field first, then checkbox.
           try {
@@ -443,32 +546,84 @@ function App() {
                             field !== 'treatmentType' &&
                             field !== 'continuingFunctionalProblems' &&
                             field !== 'progressMadeTowardPreviousGoals' &&
-                            field !== 'revisedGoals')
-            .map((field) => (
-              <div key={field} className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 capitalize">
-                  {field.replace(/([A-Z])/g, ' $1').trim()}:
-                </label>
-                <input
-                  name={field}
-                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
-                  value={formData[field]}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
-            ))}
+                            field !== 'revisedGoals' &&
+                            field !== 'noPressureUlcer' &&
+                            field !== 'pressureUlcerNum' &&
+                            field !== 'ADLMedSup' &&
+                            field !== 'grooming' &&
+                            field !== 'independentAOx3' &&
+                            field !== 'indep' &&
+                            field !== 'dischageDisp' &&
+                            field !== 'bims3' &&
+                            field !== 'bims2' &&
+                            field !== 'bims1' &&
+                            field !== 'msChange' &&
+                            field !== 'ms0' &&
+                            field !== 'indep0' &&
+                            // Hide these fields when OASIS DC is selected
+                            !(selectedTemplate === 'OASISDC' && (
+                              field === 'diagnosis' ||
+                              field === 'bp' ||
+                              field === 'pulse' ||
+                              field === 'pmh' ||
+                              field === 'rom' ||
+                              field === 'timeIn' ||
+                              field === 'timeOut' ||
+                              field === 'reassessDate' ||
+                              field === 'doctorAndNumber' ||
+                              field === 'recentHxAndCC' ||
+                              field === 'DME'
+                            )))
+            .map((field) => {
+              const isOasisField = selectedTemplate === 'OASISDC' && (field === 'bedMob' || field === 'transfers' || field === 'gait');
+              return (
+                <div key={field} className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 capitalize flex items-center gap-2">
+                    {field.replace(/([A-Z])/g, ' $1').trim()}:
+                    {isOasisField && (
+                      <button
+                        type="button"
+                        onClick={() => showInfographicHelper(field)}
+                        className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                        title="Click for coding guide"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    )}
+                  </label>
+                  <input
+                    name={field}
+                    placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
+                    value={formData[field]}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                </div>
+              );
+            })}
 
-          {/* OASIS-specific form fields - only show when OASIS template is selected */}
-          {selectedTemplate === 'OASIS' && (
+          {/* OASIS-specific form fields - only show when OASIS DC template is selected */}
+          {selectedTemplate === 'OASISDC' && (
             <>
               <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">OASIS-Specific Fields</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">OASIS DC-Specific Fields</h3>
               </div>
               
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                   Eating/Oral Hygiene/Upper Body Dressing:
+                  <button
+                    type="button"
+                    onClick={() => showInfographicHelper('eatingOralHygieneUpperBodyDressing')}
+                    className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                    title="Click for GG0130 Self-Care coding guide"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
                 </label>
                 <input
                   name="eatingOralHygieneUpperBodyDressing"
@@ -480,8 +635,18 @@ function App() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                   Toileting/Bathing/Lower Body Dressing/Footwear:
+                  <button
+                    type="button"
+                    onClick={() => showInfographicHelper('toiletingBathingLowerBodyDressingFootwear')}
+                    className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                    title="Click for GG0130 Self-Care coding guide"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
                 </label>
                 <input
                   name="toiletingBathingLowerBodyDressingFootwear"
@@ -493,8 +658,18 @@ function App() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Stairs:
+                <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                  Stairs (12 steps):
+                  <button
+                    type="button"
+                    onClick={() => showInfographicHelper('stairs')}
+                    className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                    title="Click for coding guide"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
                 </label>
                 <input
                   name="stairs"
@@ -506,8 +681,18 @@ function App() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                   ADL/Medical/Safety Supervision:
+                  <button
+                    type="button"
+                    onClick={() => showInfographicHelper('adlMedicalSafetySupervision')}
+                    className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                    title="Click for coding guide"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
                 </label>
                 <input
                   name="adlMedicalSafetySupervision"
@@ -516,6 +701,73 @@ function App() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
+              </div>
+
+              {/* No Pressure Ulcer Checkbox */}
+              <div className="space-y-1">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="noPressureUlcer"
+                    checked={formData.noPressureUlcer}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">No Pressure Ulcer &gt;= Stage 2?</span>
+                </label>
+              </div>
+
+              {/* Independent, AOx3 Checkbox */}
+              <div className="space-y-1">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="independentAOx3"
+                    checked={formData.independentAOx3}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Independent, AOx3, no disruptive behaviors/pain</span>
+                </label>
+              </div>
+
+              {/* Types/Sources of Assistance Dropdown */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Types/Sources of Assistance:
+                </label>
+                <select
+                  name="ADLMedSup"
+                  value={formData.ADLMedSup}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">Select assistance type...</option>
+                  <option value="0">0. No assist needed (Indep/No needs)</option>
+                  <option value="1">1. Non-agency caregiver(s) currently provide assistance</option>
+                  <option value="2">2. Non-agency caregiver(s) need training/support to provide assistance</option>
+                  <option value="3">3. Non-agency caregiver(s) not likely to provide assistance OR unclear</option>
+                  <option value="4">4. Assistance needed but no non-agency caregiver(s) available</option>
+                </select>
+              </div>
+
+              {/* Grooming/Dressing Dropdown */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Grooming/Dressing Upper and Lower Body:
+                </label>
+                <select
+                  name="grooming"
+                  value={formData.grooming}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">Select grooming level...</option>
+                  <option value="0">0. Able to do unaided with/without AD or adapted methods</option>
+                  <option value="1">1. Able if placed within reach</option>
+                  <option value="2">2. Needs assist</option>
+                  <option value="3">3. Entirely dependent</option>
+                </select>
               </div>
             </>
           )}
@@ -593,6 +845,110 @@ function App() {
           </p>
         </div>
       </div>
+
+      {/* Infographic Modal */}
+      {showInfographic && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowInfographic(false)}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">
+                {(infographicField === 'eatingOralHygieneUpperBodyDressing' || infographicField === 'toiletingBathingLowerBodyDressingFootwear') ? (
+                  'GG0130. Self-Care Coding Guide'
+                ) : (
+                  `OASIS DC Coding Guide - ${
+                    infographicField === 'bedMob' ? 'Bed Mobility' : 
+                    infographicField === 'transfers' ? 'Transfers' : 
+                    infographicField === 'gait' ? 'Gait' :
+                    infographicField === 'stairs' ? 'Stairs' :
+                    infographicField === 'adlMedicalSafetySupervision' ? 'ADL/Medical/Safety Supervision' :
+                    'Activity'
+                  }`
+                )}
+              </h2>
+              <button
+                onClick={() => setShowInfographic(false)}
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              {(infographicField === 'eatingOralHygieneUpperBodyDressing' || infographicField === 'toiletingBathingLowerBodyDressingFootwear') && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900 mb-2">GG0130. Self-Care</p>
+                  <p className="text-sm text-blue-800">
+                    Code the patient's usual performance at Discharge for each activity using the 6-point scale. 
+                    If activity was not attempted at Discharge, code the reason.
+                  </p>
+                </div>
+              )}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Safety and Quality of Performance</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {(infographicField === 'eatingOralHygieneUpperBodyDressing' || infographicField === 'toiletingBathingLowerBodyDressingFootwear') ? (
+                    <>
+                      If helper assistance is required because patient's performance is unsafe or of poor quality, 
+                      score according to amount of assistance provided. Activities may be completed with or without assistive devices.
+                    </>
+                  ) : (
+                    <>
+                      If helper assistance is required because a patient's performance is unsafe or of poor quality, the score should be assigned according to the amount of assistance provided. Activities may be completed with or without assistive devices.
+                    </>
+                  )}
+                </p>
+                <div className="space-y-3">
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <p className="font-semibold text-gray-800">06. Independent</p>
+                    <p className="text-sm text-gray-600">The patient completes the activity by themself with no assistance from a helper.</p>
+                  </div>
+                  <div className="border-l-4 border-blue-400 pl-4">
+                    <p className="font-semibold text-gray-800">05. Setup or clean-up assistance</p>
+                    <p className="text-sm text-gray-600">A helper sets up or cleans up; the patient completes the activity. The helper assists only prior to or following the activity.</p>
+                  </div>
+                  <div className="border-l-4 border-blue-300 pl-4">
+                    <p className="font-semibold text-gray-800">04. Supervision or touching assistance</p>
+                    <p className="text-sm text-gray-600">A helper provides verbal cues and/or touching/steadying and/or contact guard assistance as the patient completes the activity. Assistance may be provided throughout the activity or intermittently.</p>
+                  </div>
+                  <div className="border-l-4 border-yellow-400 pl-4">
+                    <p className="font-semibold text-gray-800">03. Partial/moderate assistance</p>
+                    <p className="text-sm text-gray-600">A helper does LESS THAN HALF the effort. The helper lifts, holds, or supports the trunk or limbs, but provides less than half the effort.</p>
+                  </div>
+                  <div className="border-l-4 border-orange-400 pl-4">
+                    <p className="font-semibold text-gray-800">02. Substantial/maximal assistance</p>
+                    <p className="text-sm text-gray-600">A helper does MORE THAN HALF the effort. The helper lifts or holds the trunk or limbs and provides more than half the effort.</p>
+                  </div>
+                  <div className="border-l-4 border-red-500 pl-4">
+                    <p className="font-semibold text-gray-800">01. Dependent</p>
+                    <p className="text-sm text-gray-600">A helper does ALL of the effort. The patient does none of the effort to complete the activity. Alternatively, the assistance of 2 or more helpers is required for the patient to complete the activity.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">If activity was not attempted, code reason:</h3>
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-semibold text-gray-800">07. Patient refused</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">09. Not applicable</p>
+                    <p className="text-sm text-gray-600">Not attempted, and the patient did not perform this activity prior to the current illness, exacerbation, or injury.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">10. Not attempted due to environmental limitations</p>
+                    <p className="text-sm text-gray-600">(e.g., lack of equipment, weather constraints)</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">88. Not attempted due to medical conditions or safety concerns</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
