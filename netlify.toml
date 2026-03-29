@@ -1,9 +1,16 @@
-# Build the Vite app (output is client-vite/dist — not legacy CRA "build/")
+# Vite output: client-vite/dist
+#
+# Netlify locks "Publish directory" in the dashboard when it is set here. You cannot
+# change publish from the UI while [build].publish exists; edit this file instead.
+# Paths below are relative to the repo root; "dist" is the folder Vite creates under base.
+#
+# Optional: clear "Package directory" in Netlify if it is set to client-vite/ — it can
+# conflict with Base directory + this file. Base directory = client-vite is enough.
 [build]
-  command = "cd client-vite && npm ci && npm run build"
-  publish = "client-vite/dist"
+  base = "client-vite"
+  command = "npm install && npm run build"
+  publish = "dist"
 
-# SPA fallback so direct URLs and refreshes still serve the app
 [[redirects]]
   from = "/*"
   to = "/index.html"
