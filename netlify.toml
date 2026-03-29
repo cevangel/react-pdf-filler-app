@@ -1,0 +1,10 @@
+# Build the Vite app (output is client-vite/dist — not legacy CRA "build/")
+[build]
+  command = "cd client-vite && npm ci && npm run build"
+  publish = "client-vite/dist"
+
+# SPA fallback so direct URLs and refreshes still serve the app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
