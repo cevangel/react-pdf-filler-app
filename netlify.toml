@@ -1,15 +1,10 @@
-# Vite output: client-vite/dist
+# Vite writes the site to client-vite/dist. Publish directory is set in Netlify UI:
+# Base directory = client-vite, Publish directory = dist (not client-vite/dist).
 #
-# Netlify locks "Publish directory" in the dashboard when it is set here. You cannot
-# change publish from the UI while [build].publish exists; edit this file instead.
-# Paths below are relative to the repo root; "dist" is the folder Vite creates under base.
-#
-# Optional: clear "Package directory" in Netlify if it is set to client-vite/ — it can
-# conflict with Base directory + this file. Base directory = client-vite is enough.
+# Optional: clear "Package directory" in Netlify if it duplicates base — can confuse paths.
 [build]
   base = "client-vite"
   command = "npm install && npm run build"
-  publish = "dist"
 
 [[redirects]]
   from = "/*"
