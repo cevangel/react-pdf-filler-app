@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PT evaluation -- local form</title>
+    <style>
+      :root {
+        --text: #1a1a1a;
+        --muted: #555;
+        --border: #bbb;
+        --form-bg: #f5f6f8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--text);
+        background: #e9ecef;
+        line-height: 1.45;
+        font-size: 14px;
+      }
+
+      .page-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 20px 14px 40px;
+      }
+
+      h1.form-title {
+        font-size: 1.3rem;
+        margin: 0 0 6px;
+        font-weight: 650;
+      }
+
+      .privacy-note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 18px;
+        max-width: 72ch;
+      }
+
+      .form-card {
+        background: var(--form-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin: 18px 0 10px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 4px;
+      }
+
+      .section-title:first-of-type {
+        margin-top: 0;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px 16px;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        align-items: end;
+      }
+
+      .form-field label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .form-field input,
+      .form-field select,
+      .form-field textarea {
+        width: 100%;
+        padding: 7px 9px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .form-field textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .form-field.full {
+        grid-column: 1 / -1;
+      }
+
+      .hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .rom-table-wrap {
+        overflow-x: auto;
+        margin-top: 8px;
+      }
+
+      .rom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .rom-table th,
+      .rom-table td {
+        border: 1px solid var(--border);
+        padding: 3px 5px;
+        vertical-align: middle;
+      }
+
+      .rom-table th {
+        background: #e8eaed;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .rom-table td:first-child {
+        font-weight: 500;
+        min-width: 118px;
+        background: #fafafa;
+      }
+
+      .rom-table input {
+        width: 100%;
+        border: none;
+        padding: 4px;
+        font-size: 12px;
+        font-family: inherit;
+        background: transparent;
+      }
+
+      .joint-head td {
+        font-weight: 700;
+        background: #eceef2 !important;
+        font-size: 11px;
+      }
+
+      .checkbox-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 20px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .checkbox-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button.primary {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid #333;
+        background: #333;
+        color: #fff;
+        border-radius: 4px;
+      }
+
+      button.secondary {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+      }
+
+      button.primary:hover {
+        background: #111;
+      }
+
+      .preview-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .narrative-shell {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .toolbar {
+        padding: 10px 14px;
+        background: #f4f4f4;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar .fine {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* Narrative / print document */
+      .narrative {
+        font-family: Georgia, 'Times New Roman', serif;
+        padding: 20px 22px 28px;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: #111;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .narrative h1 {
+        margin: 0 0 14px;
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+
+      .narrative h2 {
+        margin: 14px 0 6px;
+        font-size: 11pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #333;
+      }
+
+      .narrative .kv {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 2px 12px;
+        font-size: 10.5pt;
+        margin-bottom: 3px;
+      }
+
+      .narrative .kv .k {
+        color: #444;
+        font-weight: 600;
+      }
+
+      .narrative p {
+        margin: 0 0 8px;
+        white-space: pre-wrap;
+      }
+
+      .narrative table.doc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9pt;
+        margin: 8px 0;
+      }
+
+      .narrative table.doc-table th,
+      .narrative table.doc-table td {
+        border: 1px solid #999;
+        padding: 3px 5px;
+        vertical-align: top;
+      }
+
+      .narrative table.doc-table th {
+        background: #eee;
+        font-weight: 600;
+      }
+
+      .narrative ul {
+        margin: 4px 0 8px 1.1em;
+        padding: 0;
+      }
+
+      .narrative .signature-block {
+        margin-top: 36px;
+        padding-top: 16px;
+        border-top: 1px solid #999;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .narrative .sig-line {
+        margin-top: 22px;
+        font-size: 10pt;
+      }
+
+      .narrative .tinetti-note {
+        font-size: 9.5pt;
+        color: #333;
+        margin: 4px 0 8px;
+        font-style: italic;
+      }
+
+      .narrative .warn-fall {
+        color: #7a1f1f;
+        font-weight: 600;
+      }
+
+      .inline-checks label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 14px;
+        margin-bottom: 6px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .subjective-block {
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      .subjective-block h3 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .radio-col label {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        max-width: 52rem;
+      }
+
+      .radio-col input {
+        margin-top: 3px;
+      }
+
+      .tinetti-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin: 8px 0 10px;
+        padding: 10px 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      .tinetti-scores {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .modal-root {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 24px 12px;
+        overflow: auto;
+        background: rgba(0, 0, 0, 0.45);
+      }
+
+      .modal-root.is-open {
+        display: flex !important;
+      }
+
+      .modal-panel {
+        background: #fff;
+        border-radius: 10px;
+        max-width: 720px;
+        width: 100%;
+        max-height: calc(100vh - 48px);
+        overflow: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        padding: 18px 20px 20px;
+      }
+
+      .modal-panel h2 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+      }
+
+      .modal-panel .modal-hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 14px;
+      }
+
+      .tinetti-grid {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-bottom: 14px;
+      }
+
+      .tinetti-grid th,
+      .tinetti-grid td {
+        border: 1px solid var(--border);
+        padding: 6px 8px;
+        text-align: left;
+      }
+
+      .tinetti-grid th {
+        background: #eee;
+      }
+
+      .tinetti-grid select {
+        width: 100%;
+        min-width: 52px;
+        padding: 4px;
+      }
+
+      .modal-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .rehab-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 16px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+
+      @media print {
+        @page {
+          size: letter;
+          margin: 0.4in;
+        }
+
+        body {
+          background: #fff;
+        }
+
+        .page-wrap {
+          padding: 0;
+          max-width: none;
+        }
+
+        .form-card,
+        .preview-label,
+        .privacy-note,
+        .form-title {
+          display: none !important;
+        }
+
+        .narrative-shell {
+          border: none;
+          box-shadow: none;
+          border-radius: 0;
+        }
+
+        .toolbar {
+          display: none !important;
+        }
+
+        .narrative {
+          font-size: 9.5pt;
+          line-height: 1.32;
+          padding: 0;
+          max-width: none;
+        }
+
+        .narrative h1 {
+          font-size: 13pt;
+          margin-bottom: 10px;
+        }
+
+        .narrative h2 {
+          font-size: 9.5pt;
+          margin: 10px 0 4px;
+        }
+
+        .narrative .kv {
+          font-size: 9pt;
+          grid-template-columns: 128px 1fr;
+          margin-bottom: 2px;
+        }
+
+        .narrative table.doc-table {
+          font-size: 7.5pt;
+          margin: 4px 0;
+        }
+
+        .narrative table.doc-table th,
+        .narrative table.doc-table td {
+          padding: 2px 4px;
+        }
+
+        .narrative ul {
+          margin: 2px 0 6px 1em;
+        }
+
+        .narrative p {
+          margin: 0 0 6px;
+        }
+
+        .narrative .signature-block {
+          margin-top: 28px;
+          padding-top: 12px;
+        }
+
+        .narrative .sig-line {
+          margin-top: 18px;
+          font-size: 9.5pt;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrap">
+      <h1 class="form-title">Physical therapy evaluation (local)</h1>
+      <p class="privacy-note">
+        Runs entirely in your browser. Nothing is uploaded or saved. Use
+        <strong>Download PDF</strong> → choose <strong>Save as PDF</strong> in the print dialog.
+      </p>
+
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="patient_name">Patient name</label>
+            <input type="text" id="patient_name" autocomplete="off" />
+          </div>
+          <div class="form-field">
+            <label for="eval_date">Today&rsquo;s date</label>
+            <input type="date" id="eval_date" />
+          </div>
+          <div class="form-field">
+            <label for="time_in">Time in</label>
+            <input
+              type="text"
+              id="time_in"
+              placeholder="e.g. 8:45am or 8:45 PM"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-field">
+            <label for="time_out">Time out</label>
+            <input
+              type="text"
+              id="time_out"
+              placeholder="e.g. 9:15am or 9:15 PM"
+              autocomplete="off"
+            />
+          </div>
+          <p class="hint full" style="grid-column: 1 / -1; margin: -4px 0 0">
+            Type 12-hour time with <strong>am</strong> or <strong>pm</strong>. Time out defaults to
+            30 minutes after time in when it can be parsed; edit time out anytime.
+          </p>
+        </div>
+
+        <div class="section-title">Subjective</div>
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="diagnosis">Diagnosis</label>
+            <input type="text" id="diagnosis" autocomplete="off" />
+          </div>
+          <div class="form-field full">
+            <label for="pmh">PMH (past medical history)</label>
+            <textarea id="pmh" rows="3" autocomplete="off"></textarea>
+          </div>
+        </div>
+
+        <div class="subjective-block">
+          <h3>Prior level of function</h3>
+          <div class="inline-checks">
+            <label
+              ><input type="checkbox" id="plof_i_amb" /> I with ambulation</label
+            >
+            <label
+              ><input type="checkbox" id="plof_sup_amb" checked /> Sup. or assist
+              to ambulate</label
+            >
+            <label
+              >Assistive device used:
+              <input
+                type="text"
+                id="plof_ad_device"
+                style="width: 200px; max-width: 55%; margin-left: 6px"
+                autocomplete="off"
+            /></label>
+          </div>
+          <div class="inline-checks" style="margin-top: 8px">
+            <label><input type="checkbox" id="plof_i_adl" /> I with ADLs</label>
+            <label
+              ><input type="checkbox" id="plof_sup_adl" /> Sup. or assist with
+              ADLs</label
+            >
+          </div>
+          <div class="form-field full" style="margin-top: 8px; margin-bottom: 0">
+            <label for="plof_other">Other</label>
+            <input type="text" id="plof_other" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="subjective-block">
+          <h3>Cognitive status</h3>
+          <div class="radio-col">
+            <label
+              ><input type="radio" name="cognitive" id="cog_ao" value="ao" />
+              Patient is alert and oriented x3</label
+            >
+            <label
+              ><input
+                type="radio"
+                name="cognitive"
+                id="cog_confused"
+                value="confused"
+                checked
+              />
+              Patient is confused/forgetful but able to follow directions</label
+            >
+            <label
+              ><input type="radio" name="cognitive" id="cog_dementia" value="dementia" />
+              Patient has dementia requiring constant caregiver assistance</label
+            >
+          </div>
+        </div>
+
+        <div class="subjective-block">
+          <h3>Patient is homebound</h3>
+          <div class="inline-checks">
+            <label
+              ><input type="radio" name="homebound" id="hb_yes" value="yes" checked />
+              Yes</label
+            >
+            <label
+              ><input type="radio" name="homebound" id="hb_no" value="no" /> No</label
+            >
+          </div>
+        </div>
+
+        <div class="subjective-block">
+          <h3>Social situation</h3>
+          <div class="inline-checks">
+            <label
+              ><input type="checkbox" id="soc_alone" /> Lives alone</label
+            >
+            <label
+              ><input type="checkbox" id="soc_others" /> Lives with others</label
+            >
+          </div>
+        </div>
+
+        <div class="section-title">Objective</div>
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="vitals_pre">Pre-exercise BP, heart rate, &amp; pulse ox</label>
+            <input type="text" id="vitals_pre" placeholder="e.g. 128/78, 78 bpm, 97% RA" />
+          </div>
+          <div class="form-field full">
+            <label for="vitals_post">Post-exercise BP, heart rate, &amp; pulse ox</label>
+            <input type="text" id="vitals_post" placeholder="e.g. 132/80, 92 bpm, 96% RA" />
+          </div>
+        </div>
+
+        <div class="form-field full" style="margin-top: 12px">
+          <label>Tinetti balance &amp; gait (POMA)</label>
+          <div class="tinetti-bar">
+            <button type="button" class="secondary" id="btn_tinetti_open">
+              Open Tinetti worksheet
+            </button>
+            <span class="tinetti-scores" id="tinetti_summary_line"
+              >Balance: <span id="tinetti_bal_disp">--</span> /16 &nbsp; Gait:
+              <span id="tinetti_gait_disp">--</span> /12</span
+            >
+          </div>
+          <p class="hint" id="tinetti_risk_hint" style="display: none">
+            <strong>Reminder:</strong> Balance &lt; 10 or Gait &lt; 9 suggests increased fall
+            risk (per common interpretation).
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="tug">TUG test</label>
+            <input
+              type="text"
+              id="tug"
+              placeholder="e.g. 18 seconds (often recorded in sec; &gt;20 sec suggests fall risk)"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-field full">
+            <label for="home_safety">Assistive devices / home safety recommendations</label>
+            <textarea
+              id="home_safety"
+              rows="2"
+              placeholder="Optional -- often left blank"
+              autocomplete="off"
+            ></textarea>
+          </div>
+        </div>
+
+        <p class="hint" style="margin-top: 10px">
+          ROM / MMT -- defaults: ROM <strong>WFL</strong>, strength <strong>3+/5</strong> (editable).
+        </p>
+        <div class="rom-table-wrap">
+          <table class="rom-table" id="rom_editor_table">
+            <thead>
+              <tr>
+                <th>Movement</th>
+                <th>ROM L</th>
+                <th>Strength L</th>
+                <th>ROM R</th>
+                <th>Strength R</th>
+              </tr>
+            </thead>
+            <tbody id="rom_editor_body"></tbody>
+          </table>
+        </div>
+
+        <div class="form-grid" style="margin-top: 14px">
+          <div class="form-field">
+            <label for="bed_mob">Bed mobility (eval)</label>
+            <select id="bed_mob"></select>
+          </div>
+          <div class="form-field">
+            <label for="transfers">Transfers (eval)</label>
+            <select id="transfers"></select>
+          </div>
+          <div class="form-field">
+            <label for="gait_level">Gait assistance level (eval)</label>
+            <select id="gait_level" aria-describedby="gait_level_hint"></select>
+            <p class="hint" id="gait_level_hint">
+              Drives ambulation goal wording; use <strong>Gait (free text)</strong> for your full note.
+            </p>
+          </div>
+          <div class="form-field">
+            <label for="ambulation_ft">Ambulation distance at eval (ft)</label>
+            <input type="number" id="ambulation_ft" min="0" step="1" placeholder="e.g. 50" />
+          </div>
+          <div class="form-field">
+            <label for="ad_device">Assistive device (for goal wording)</label>
+            <input type="text" id="ad_device" placeholder="e.g. rolling walker" />
+          </div>
+          <div class="form-field full">
+            <label for="gait_free">Gait (free text)</label>
+            <textarea
+              id="gait_free"
+              rows="2"
+              placeholder="e.g. 50 feet with rolling walker and Mod A"
+            ></textarea>
+          </div>
+          <div class="form-field">
+            <label for="reassess_date">Reassess date</label>
+            <input type="date" id="reassess_date" />
+          </div>
+          <div class="form-field full">
+            <label for="doctor_phone">Doctor &amp; phone number</label>
+            <input type="text" id="doctor_phone" autocomplete="off" />
+          </div>
+          <div class="form-field full">
+            <label for="recent_hx">Recent Hx &amp; chief complaint</label>
+            <textarea id="recent_hx" rows="3" autocomplete="off"></textarea>
+          </div>
+          <div class="form-field full">
+            <label for="dme">DME</label>
+            <input type="text" id="dme" value="RW, shower chair, grab bars" />
+          </div>
+          <div class="form-field full">
+            <label for="other_obj">Other</label>
+            <textarea
+              id="other_obj"
+              rows="2"
+              placeholder="Fall hx; pain level; goals; recent medical hx; etc."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="section-title">Assessment</div>
+        <div class="form-field full" style="margin-bottom: 0">
+          <label for="assessment">Assessment</label>
+          <textarea id="assessment" rows="8"></textarea>
+        </div>
+
+        <div class="section-title">Plan</div>
+        <div class="form-field full">
+          <label for="plan_frequency">Frequency / duration line</label>
+          <input
+            type="text"
+            id="plan_frequency"
+            value="2x/w for 8 weeks working on Therapeutic Exercises, Therapeutic Activities, Neuromuscular Reeducation, Gait training."
+          />
+        </div>
+        <div class="checkbox-row" id="plan_checks"></div>
+        <div class="form-field full" style="margin-top: 10px">
+          <label for="plan_other_text">Other (billing) -- specify if checked</label>
+          <input type="text" id="plan_other_text" placeholder="e.g. additional skilled interventions" />
+        </div>
+
+        <div class="form-field full" style="margin-top: 12px">
+          <label>Rehab potential</label>
+          <div class="rehab-row">
+            <label
+              ><input type="radio" name="rehab" id="rehab_excellent" value="Excellent" />
+              Excellent</label
+            >
+            <label
+              ><input type="radio" name="rehab" id="rehab_good" value="Good" /> Good</label
+            >
+            <label
+              ><input type="radio" name="rehab" id="rehab_fair" value="Fair" checked />
+              Fair</label
+            >
+            <label
+              ><input type="radio" name="rehab" id="rehab_poor" value="Poor" /> Poor</label
+            >
+          </div>
+        </div>
+
+        <p class="hint">Short-term / long-term goals auto-suggest from eval levels; edit as needed.</p>
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="goal_st_transfers">Short-term -- transfers</label>
+            <input type="text" id="goal_st_transfers" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_st_bed">Short-term -- bed mobility</label>
+            <input type="text" id="goal_st_bed" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_st_amb">Short-term -- ambulation</label>
+            <input type="text" id="goal_st_amb" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_lt_transfers">Long-term -- transfers</label>
+            <input type="text" id="goal_lt_transfers" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_lt_bed">Long-term -- bed mobility</label>
+            <input type="text" id="goal_lt_bed" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_lt_amb">Long-term -- ambulation</label>
+            <input type="text" id="goal_lt_amb" />
+          </div>
+          <div class="form-field full">
+            <label for="goal_hep_st">Short-term -- HEP</label>
+            <input
+              type="text"
+              id="goal_hep_st"
+              value="Patient/Caregiver will be able to do HEP with supervision."
+            />
+          </div>
+          <div class="form-field full">
+            <label for="goal_hep_lt">Long-term -- HEP</label>
+            <input
+              type="text"
+              id="goal_hep_lt"
+              value="Patient/Caregiver will be able to do HEP with independence."
+            />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="secondary" id="btn_refresh_goals">Refresh goal suggestions</button>
+        </div>
+      </div>
+
+      <div class="preview-label">Read-only narrative (updates as you type)</div>
+      <div class="narrative-shell">
+        <div class="toolbar">
+          <button type="button" class="primary" id="btn_pdf">Download PDF</button>
+          <span class="fine"
+            >Print layout is tightened to fit up to <strong>two</strong> letter pages. Opens print
+            &rarr; Save as PDF (or Microsoft Print to PDF).</span
+          >
+        </div>
+        <article class="narrative" id="narrative_root" aria-label="PT evaluation narrative"></article>
+      </div>
+    </div>
+
+    <div
+      class="modal-root"
+      id="tinetti_modal"
+      role="dialog"
+      aria-labelledby="tinetti_modal_title"
+      aria-modal="true"
+      hidden
+    >
+      <div class="modal-panel" role="document">
+        <h2 id="tinetti_modal_title">Tinetti balance &amp; gait assessment</h2>
+        <p class="modal-hint">
+          Score each item using your facility&rsquo;s scoring key (0 = most impairment). Subtotals:
+          Balance max <strong>16</strong>, Gait max <strong>12</strong>. When finished, click
+          <strong>Apply scores</strong> to copy totals into the form.
+        </p>
+        <p class="modal-hint" style="margin-top: -6px">
+          <strong>Reminder:</strong> Balance &lt; 10 or Gait &lt; 9 often indicates increased fall
+          risk (interpret with clinical judgment).
+        </p>
+
+        <h3 style="margin: 16px 0 8px; font-size: 14px">Balance (max 16)</h3>
+        <table class="tinetti-grid" id="tinetti_balance_table">
+          <thead>
+            <tr>
+              <th style="width: 62%">Item</th>
+              <th style="width: 18%">Score</th>
+              <th style="width: 20%">Max</th>
+            </tr>
+          </thead>
+          <tbody id="tinetti_balance_body"></tbody>
+        </table>
+        <p style="margin: 0 0 12px; font-weight: 600">
+          Balance subtotal: <span id="tinetti_bal_live">0</span> / 16
+        </p>
+
+        <h3 style="margin: 16px 0 8px; font-size: 14px">Gait (max 12)</h3>
+        <table class="tinetti-grid" id="tinetti_gait_table">
+          <thead>
+            <tr>
+              <th style="width: 62%">Item</th>
+              <th style="width: 18%">Score</th>
+              <th style="width: 20%">Max</th>
+            </tr>
+          </thead>
+          <tbody id="tinetti_gait_body"></tbody>
+        </table>
+        <p style="margin: 0 0 12px; font-weight: 600">
+          Gait subtotal: <span id="tinetti_gait_live">0</span> / 12
+        </p>
+
+        <div class="modal-actions">
+          <button type="button" class="primary" id="btn_tinetti_apply">Apply scores</button>
+          <button type="button" class="secondary" id="btn_tinetti_close">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var ASST_LEVELS = ['Dep', 'Max A', 'Mod A', 'Min A', 'CGA', 'SBA', 'Ind'];
+
+        var DEFAULT_ASSESSMENT =
+          'Patient presents with decreased overall LE strength, decreased balance, and decreased activity tolerance all which are limiting the patient\u2019s functional mobility and safety.\n\n' +
+          'Patient is at increased fall risk as evidenced by difficulty walking. Patient functional status has declined due to deconditioning. Patient will benefit from skilled PT services to address deficits, reduce fall risk, achieve goals, and reach maximal rehab potential.';
+
+        var ROM_ROWS = [
+          { type: 'gross', label: 'Grossly', defaults: { rl: 'WFL', sl: '3+/5', rr: 'WFL', sr: '3+/5' } },
+          { type: 'joint', section: 'Hip', move: 'Flexion' },
+          { type: 'joint', section: 'Hip', move: 'Extension' },
+          { type: 'joint', section: 'Hip', move: 'Abduction' },
+          { type: 'joint', section: 'Hip', move: 'Int. rotation' },
+          { type: 'joint', section: 'Hip', move: 'Ext. rotation' },
+          { type: 'joint', section: 'Knee', move: 'Flexion' },
+          { type: 'joint', section: 'Knee', move: 'Extension' },
+          { type: 'joint', section: 'Ankle', move: 'Dorsiflexion' },
+          { type: 'joint', section: 'Ankle', move: 'Plantarflexion' },
+          { type: 'joint', section: 'Ankle', move: 'Inversion' },
+          { type: 'joint', section: 'Ankle', move: 'Eversion' },
+        ];
+
+        var PLAN_ITEMS = [
+          { id: 'pc_te', label: 'Therapeutic Exercises', checked: true },
+          { id: 'pc_ta', label: 'Therapeutic Activities', checked: true },
+          { id: 'pc_nmre', label: 'Neuromuscular reeducation', checked: true },
+          { id: 'pc_gait', label: 'Gait training', checked: true },
+          { id: 'pc_other', label: 'Other', checked: false },
+        ];
+
+        /** Balance subsection max 16; gait max 12 (common Tinetti / POMA structure). */
+        var TINETTI_BALANCE = [
+          { label: 'Sitting balance', max: 2 },
+          { label: 'Arises from chair', max: 2 },
+          { label: 'Attempts to arise', max: 1 },
+          { label: 'Immediate standing balance (first 5 sec)', max: 2 },
+          { label: 'Standing balance (unsupported)', max: 2 },
+          { label: 'Nudged (sternal)', max: 2 },
+          { label: 'Eyes closed (standing)', max: 1 },
+          { label: 'Turning 360\u00b0', max: 2 },
+          { label: 'Sitting down', max: 2 },
+        ];
+
+        var TINETTI_GAIT = [
+          { label: 'Initiation of gait', max: 2 },
+          { label: 'Step length and height', max: 2 },
+          { label: 'Step symmetry', max: 2 },
+          { label: 'Step continuity', max: 2 },
+          { label: 'Path / deviation', max: 2 },
+          { label: 'Trunk', max: 1 },
+          { label: 'Walking stance', max: 1 },
+        ];
+
+        var timeOutTouched = false;
+        var tinettiBalApplied = null;
+        var tinettiGaitApplied = null;
+
+        function buildTinettiSelect(max) {
+          var opts = '';
+          for (var v = 0; v <= max; v++) {
+            opts += '<option value="' + v + '">' + v + '</option>';
+          }
+          return '<select class="tinetti-sel" data-max="' + max + '">' + opts + '</select>';
+        }
+
+        function buildTinettiModalTables() {
+          var bb = document.getElementById('tinetti_balance_body');
+          bb.innerHTML = '';
+          TINETTI_BALANCE.forEach(function (item, i) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' +
+              escapeHtml(item.label) +
+              '</td><td>' +
+              buildTinettiSelect(item.max) +
+              '</td><td>' +
+              item.max +
+              '</td>';
+            tr.querySelector('select').dataset.section = 'bal';
+            tr.querySelector('select').dataset.index = String(i);
+            bb.appendChild(tr);
+          });
+
+          var gb = document.getElementById('tinetti_gait_body');
+          gb.innerHTML = '';
+          TINETTI_GAIT.forEach(function (item, i) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' +
+              escapeHtml(item.label) +
+              '</td><td>' +
+              buildTinettiSelect(item.max) +
+              '</td><td>' +
+              item.max +
+              '</td>';
+            tr.querySelector('select').dataset.section = 'gait';
+            tr.querySelector('select').dataset.index = String(i);
+            gb.appendChild(tr);
+          });
+
+          bb.querySelectorAll('.tinetti-sel').forEach(function (sel) {
+            sel.addEventListener('change', updateTinettiLive);
+          });
+          gb.querySelectorAll('.tinetti-sel').forEach(function (sel) {
+            sel.addEventListener('change', updateTinettiLive);
+          });
+        }
+
+        function sumTinettiSection(section) {
+          var id = section === 'bal' ? 'tinetti_balance_body' : 'tinetti_gait_body';
+          var sels = document.querySelectorAll('#' + id + ' .tinetti-sel');
+          var sum = 0;
+          sels.forEach(function (sel) {
+            var v = parseInt(sel.value, 10);
+            var mx = parseInt(sel.dataset.max, 10);
+            if (isNaN(v)) v = 0;
+            if (v > mx) v = mx;
+            sum += v;
+          });
+          return sum;
+        }
+
+        function updateTinettiLive() {
+          var b = sumTinettiSection('bal');
+          var g = sumTinettiSection('gait');
+          document.getElementById('tinetti_bal_live').textContent = String(b);
+          document.getElementById('tinetti_gait_live').textContent = String(g);
+        }
+
+        function openTinettiModal() {
+          var m = document.getElementById('tinetti_modal');
+          m.removeAttribute('hidden');
+          m.classList.add('is-open');
+          document.body.style.overflow = 'hidden';
+          updateTinettiLive();
+          document.getElementById('btn_tinetti_apply').focus();
+        }
+
+        function closeTinettiModal() {
+          var m = document.getElementById('tinetti_modal');
+          m.setAttribute('hidden', '');
+          m.classList.remove('is-open');
+          document.body.style.overflow = '';
+        }
+
+        function applyTinettiScores() {
+          tinettiBalApplied = sumTinettiSection('bal');
+          tinettiGaitApplied = sumTinettiSection('gait');
+          document.getElementById('tinetti_bal_disp').textContent = String(tinettiBalApplied);
+          document.getElementById('tinetti_gait_disp').textContent = String(tinettiGaitApplied);
+          var hint = document.getElementById('tinetti_risk_hint');
+          if (tinettiBalApplied < 10 || tinettiGaitApplied < 9) {
+            hint.style.display = 'block';
+          } else {
+            hint.style.display = 'none';
+          }
+          closeTinettiModal();
+          renderNarrative();
+        }
+
+        function formatPriorLevelFunction() {
+          var parts = [];
+          if (document.getElementById('plof_i_amb').checked) parts.push('I with ambulation');
+          if (document.getElementById('plof_sup_amb').checked) {
+            parts.push('Sup. or assist to ambulate');
+          }
+          var ad = document.getElementById('plof_ad_device').value.trim();
+          if (ad) parts.push('Assistive device used: ' + ad);
+          if (document.getElementById('plof_i_adl').checked) parts.push('I with ADLs');
+          if (document.getElementById('plof_sup_adl').checked) {
+            parts.push('Sup. or assist with ADLs');
+          }
+          var o = document.getElementById('plof_other').value.trim();
+          if (o) parts.push('Other: ' + o);
+          return parts.length ? parts.join('; ') : '--';
+        }
+
+        function formatCognitive() {
+          var r = document.querySelector('input[name="cognitive"]:checked');
+          if (!r) return '--';
+          if (r.value === 'ao') return 'Patient is alert and oriented x3.';
+          if (r.value === 'confused') {
+            return 'Patient is confused/forgetful but able to follow directions.';
+          }
+          return 'Patient has dementia requiring constant caregiver assistance.';
+        }
+
+        function formatHomebound() {
+          var r = document.querySelector('input[name="homebound"]:checked');
+          if (!r) return '--';
+          return r.value === 'yes' ? 'Yes' : 'No';
+        }
+
+        function formatSocial() {
+          var parts = [];
+          if (document.getElementById('soc_alone').checked) parts.push('Lives alone');
+          if (document.getElementById('soc_others').checked) parts.push('Lives with others');
+          return parts.length ? parts.join('; ') : '--';
+        }
+
+        function formatRehabPotential() {
+          var r = document.querySelector('input[name="rehab"]:checked');
+          return r ? r.value : '--';
+        }
+
+        function pad2(n) {
+          return String(n).padStart(2, '0');
+        }
+
+        function toIsoLocal(d) {
+          return (
+            d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate())
+          );
+        }
+
+        function parseIsoLocal(iso) {
+          var p = String(iso).split('-');
+          return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+        }
+
+        function addWeeks(d, w) {
+          var x = new Date(d.getTime());
+          x.setDate(x.getDate() + 7 * w);
+          return x;
+        }
+
+        /** Parse typed 12h times: "8:45 PM", "8:45pm", "8:45 am", etc. */
+        function parseTimeText(str) {
+          var s = String(str).trim().toLowerCase().replace(/\./g, '');
+          if (!s) return null;
+          s = s.replace(/\s+/g, ' ');
+          var m = s.match(/^(\d{1,2})\s*:\s*(\d{1,2})\s*(a\s*m|p\s*m|am|pm)$/);
+          if (!m) return null;
+          var h = parseInt(m[1], 10);
+          var min = parseInt(m[2], 10);
+          var apPart = m[3].replace(/\s/g, '');
+          var ap = apPart.indexOf('p') === 0 ? 'PM' : 'AM';
+          if (h < 1 || h > 12 || min < 0 || min > 59) return null;
+          return { h: h, m: min, ap: ap };
+        }
+
+        function toMinutes(t) {
+          var h = t.h % 12;
+          if (t.ap === 'PM') h += 12;
+          return h * 60 + t.m;
+        }
+
+        function fromMinutesExact(total) {
+          total = ((total % 1440) + 1440) % 1440;
+          var h24 = Math.floor(total / 60);
+          var min = total % 60;
+          var ap = h24 >= 12 ? 'PM' : 'AM';
+          var h12 = h24 % 12;
+          if (h12 === 0) h12 = 12;
+          return { h: h12, m: min, ap: ap };
+        }
+
+        function formatTimeTyped(t) {
+          var ap = String(t.ap).toUpperCase() === 'PM' ? 'pm' : 'am';
+          return t.h + ':' + pad2(t.m) + ap;
+        }
+
+        function syncTimeOutFromIn() {
+          if (timeOutTouched) return;
+          var tin = parseTimeText(document.getElementById('time_in').value);
+          if (!tin) return;
+          var mins = toMinutes(tin) + 30;
+          document.getElementById('time_out').value = formatTimeTyped(fromMinutesExact(mins));
+        }
+
+        function fillSelect(id) {
+          var sel = document.getElementById(id);
+          sel.innerHTML = '';
+          ASST_LEVELS.forEach(function (lvl) {
+            var o = document.createElement('option');
+            o.value = lvl;
+            o.textContent = lvl;
+            sel.appendChild(o);
+          });
+        }
+
+        function levelIndex(val) {
+          var i = ASST_LEVELS.indexOf(val);
+          return i < 0 ? 2 : i;
+        }
+
+        function suggestLevel(idx, delta) {
+          var n = Math.min(ASST_LEVELS.length - 1, idx + delta);
+          return ASST_LEVELS[n];
+        }
+
+        function ambulationPhrase(ftBase, deltaFt, level, device) {
+          var dev = (device || '').trim();
+          var base = parseInt(String(ftBase), 10);
+          var lvl = level || 'Mod A';
+          if (!isNaN(base) && base >= 0) {
+            var target = base + deltaFt;
+            var d = dev ? dev + ' and ' : '';
+            return target + ' feet with ' + d + lvl;
+          }
+          var d2 = dev ? ' with ' + dev + ' and ' : ' with ';
+          return 'Progress toward functional distances' + d2 + lvl;
+        }
+
+        function refreshGoals() {
+          var bi = levelIndex(document.getElementById('bed_mob').value);
+          var ti = levelIndex(document.getElementById('transfers').value);
+          var gi = levelIndex(document.getElementById('gait_level').value);
+          var ft = document.getElementById('ambulation_ft').value;
+          var dev = document.getElementById('ad_device').value;
+
+          document.getElementById('goal_st_transfers').value = suggestLevel(ti, 1);
+          document.getElementById('goal_st_bed').value = suggestLevel(bi, 1);
+          document.getElementById('goal_st_amb').value = ambulationPhrase(ft, 10, suggestLevel(gi, 1), dev);
+
+          document.getElementById('goal_lt_transfers').value = suggestLevel(ti, 2);
+          document.getElementById('goal_lt_bed').value = suggestLevel(bi, 2);
+          document.getElementById('goal_lt_amb').value = ambulationPhrase(ft, 20, suggestLevel(gi, 2), dev);
+        }
+
+        function buildRomEditor() {
+          var tbody = document.getElementById('rom_editor_body');
+          tbody.innerHTML = '';
+          var currentSection = '';
+          ROM_ROWS.forEach(function (row, idx) {
+            if (row.type === 'joint' && row.section !== currentSection) {
+              currentSection = row.section;
+              var hr = document.createElement('tr');
+              hr.className = 'joint-head';
+              hr.innerHTML =
+                '<td colspan="5">' + escapeHtml(currentSection) + '</td>';
+              tbody.appendChild(hr);
+            }
+            var tr = document.createElement('tr');
+            var lab = row.type === 'gross' ? 'Grossly' : row.move;
+            var rl = row.defaults ? row.defaults.rl : 'WFL';
+            var sl = row.defaults ? row.defaults.sl : '3+/5';
+            var rr = row.defaults ? row.defaults.rr : 'WFL';
+            var sr = row.defaults ? row.defaults.sr : '3+/5';
+            tr.innerHTML =
+              '<td>' +
+              escapeHtml(lab) +
+              '</td>' +
+              '<td><input type="text" class="rom-inp" data-r="' +
+              idx +
+              '" data-f="rl" value="' +
+              escapeAttr(rl) +
+              '" /></td>' +
+              '<td><input type="text" class="rom-inp" data-r="' +
+              idx +
+              '" data-f="sl" value="' +
+              escapeAttr(sl) +
+              '" /></td>' +
+              '<td><input type="text" class="rom-inp" data-r="' +
+              idx +
+              '" data-f="rr" value="' +
+              escapeAttr(rr) +
+              '" /></td>' +
+              '<td><input type="text" class="rom-inp" data-r="' +
+              idx +
+              '" data-f="sr" value="' +
+              escapeAttr(sr) +
+              '" /></td>';
+            tbody.appendChild(tr);
+          });
+          tbody.querySelectorAll('.rom-inp').forEach(function (inp) {
+            inp.addEventListener('input', renderNarrative);
+            inp.addEventListener('change', renderNarrative);
+          });
+        }
+
+        function readRomMatrix() {
+          var rows = [];
+          ROM_ROWS.forEach(function (def, idx) {
+            var cells = document.querySelectorAll('.rom-inp[data-r="' + idx + '"]');
+            var get = function (f) {
+              var el = document.querySelector('.rom-inp[data-r="' + idx + '"][data-f="' + f + '"]');
+              return el ? el.value.trim() : '';
+            };
+            rows.push({
+              def: def,
+              rl: get('rl'),
+              sl: get('sl'),
+              rr: get('rr'),
+              sr: get('sr'),
+            });
+          });
+          return rows;
+        }
+
+        function escapeHtml(s) {
+          var d = document.createElement('div');
+          d.textContent = s == null ? '' : String(s);
+          return d.innerHTML;
+        }
+
+        function escapeAttr(s) {
+          return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;');
+        }
+
+        function formatDisplayDate(iso) {
+          if (!iso) return '--';
+          var d = parseIsoLocal(iso);
+          return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          }).format(d);
+        }
+
+        function buildPlanCheckboxes() {
+          var host = document.getElementById('plan_checks');
+          host.innerHTML = '';
+          PLAN_ITEMS.forEach(function (item) {
+            var id = item.id;
+            var lab = document.createElement('label');
+            lab.innerHTML =
+              '<input type="checkbox" id="' +
+              id +
+              '" ' +
+              (item.checked ? 'checked' : '') +
+              ' /> ' +
+              escapeHtml(item.label);
+            host.appendChild(lab);
+          });
+        }
+
+        function renderNarrative() {
+          var root = document.getElementById('narrative_root');
+          var name = document.getElementById('patient_name').value.trim() || '--';
+          var dIso = document.getElementById('eval_date').value;
+          var tIn = document.getElementById('time_in').value.trim() || '--';
+          var tOut = document.getElementById('time_out').value.trim() || '--';
+
+          var diag = document.getElementById('diagnosis').value.trim() || '--';
+          var pmh = document.getElementById('pmh').value.trim() || '--';
+          var plof = formatPriorLevelFunction();
+          var cog = formatCognitive();
+          var hb = formatHomebound();
+          var soc = formatSocial();
+          var pre = document.getElementById('vitals_pre').value.trim() || '--';
+          var post = document.getElementById('vitals_post').value.trim() || '--';
+          var tug = document.getElementById('tug').value.trim() || '--';
+          var homeSafety = document.getElementById('home_safety').value.trim() || '--';
+
+          var tinettiHtml = '';
+          if (tinettiBalApplied != null && tinettiGaitApplied != null) {
+            tinettiHtml +=
+              '<div class="kv"><span class="k">Tinetti -- Balance</span><span>' +
+              tinettiBalApplied +
+              ' / 16</span></div>' +
+              '<div class="kv"><span class="k">Tinetti -- Gait</span><span>' +
+              tinettiGaitApplied +
+              ' / 12</span></div>';
+            if (tinettiBalApplied < 10 || tinettiGaitApplied < 9) {
+              tinettiHtml +=
+                '<p class="tinetti-note warn-fall">Reminder: Balance &lt; 10 or Gait &lt; 9 suggests increased fall risk (interpret with clinical judgment).</p>';
+            }
+          } else {
+            tinettiHtml +=
+              '<div class="kv"><span class="k">Tinetti</span><span>Not recorded</span></div>';
+          }
+
+          var bed = document.getElementById('bed_mob').value;
+          var xfer = document.getElementById('transfers').value;
+          var gaitTxt = document.getElementById('gait_free').value.trim() || '--';
+          var rDate = document.getElementById('reassess_date').value;
+          var doc = document.getElementById('doctor_phone').value.trim() || '--';
+          var recent = document.getElementById('recent_hx').value.trim() || '--';
+          var dme = document.getElementById('dme').value.trim() || '--';
+          var other = document.getElementById('other_obj').value.trim() || '--';
+          var assess = document.getElementById('assessment').value.trim() || '--';
+          var freq = document.getElementById('plan_frequency').value.trim() || '--';
+          var rehab = formatRehabPotential();
+
+          var checkedPlans = [];
+          PLAN_ITEMS.forEach(function (item) {
+            var el = document.getElementById(item.id);
+            if (el && el.checked) checkedPlans.push(item.label);
+          });
+          var otherSpec = document.getElementById('plan_other_text').value.trim();
+          if (document.getElementById('pc_other') && document.getElementById('pc_other').checked && otherSpec) {
+            checkedPlans.push('Other: ' + otherSpec);
+          } else if (document.getElementById('pc_other') && document.getElementById('pc_other').checked) {
+            checkedPlans.push('Other');
+          }
+
+          var gStT = document.getElementById('goal_st_transfers').value.trim();
+          var gStB = document.getElementById('goal_st_bed').value.trim();
+          var gStA = document.getElementById('goal_st_amb').value.trim();
+          var gLtT = document.getElementById('goal_lt_transfers').value.trim();
+          var gLtB = document.getElementById('goal_lt_bed').value.trim();
+          var gLtA = document.getElementById('goal_lt_amb').value.trim();
+          var gHepSt = document.getElementById('goal_hep_st').value.trim();
+          var gHepLt = document.getElementById('goal_hep_lt').value.trim();
+
+          var romRows = readRomMatrix();
+          var romHtml = '';
+          var currentSec = '';
+          romHtml += '<table class="doc-table"><thead><tr>';
+          romHtml += '<th>Movement</th><th>ROM L</th><th>Strength L</th><th>ROM R</th><th>Strength R</th>';
+          romHtml += '</tr></thead><tbody>';
+          romRows.forEach(function (R) {
+            if (R.def.type === 'joint' && R.def.section !== currentSec) {
+              currentSec = R.def.section;
+              romHtml +=
+                '<tr><td colspan="5"><strong>' +
+                escapeHtml(currentSec) +
+                '</strong></td></tr>';
+            }
+            var label = R.def.type === 'gross' ? 'Grossly' : R.def.move;
+            romHtml +=
+              '<tr><td>' +
+              escapeHtml(label) +
+              '</td><td>' +
+              escapeHtml(R.rl) +
+              '</td><td>' +
+              escapeHtml(R.sl) +
+              '</td><td>' +
+              escapeHtml(R.rr) +
+              '</td><td>' +
+              escapeHtml(R.sr) +
+              '</td></tr>';
+          });
+          romHtml += '</tbody></table>';
+
+          var goalsSt =
+            '<ul><li>Transfers: ' +
+            escapeHtml(gStT || '--') +
+            '</li><li>Bed mobility: ' +
+            escapeHtml(gStB || '--') +
+            '</li><li>Ambulation: ' +
+            escapeHtml(gStA || '--') +
+            '</li><li>HEP: ' +
+            escapeHtml(gHepSt || '--') +
+            '</li></ul>';
+          var goalsLt =
+            '<ul><li>Transfers: ' +
+            escapeHtml(gLtT || '--') +
+            '</li><li>Bed mobility: ' +
+            escapeHtml(gLtB || '--') +
+            '</li><li>Ambulation: ' +
+            escapeHtml(gLtA || '--') +
+            '</li><li>HEP: ' +
+            escapeHtml(gHepLt || '--') +
+            '</li></ul>';
+
+          var sigBlock =
+            '<div class="signature-block">' +
+            '<div class="sig-line">Patient signature: _________________________________ &nbsp; Date: _______________</div>' +
+            '<div class="sig-line">Physical therapist signature: _________________________________ &nbsp; Date: _______________</div>' +
+            '</div>';
+
+          root.innerHTML =
+            '<h1>Physical Therapy Evaluation</h1>' +
+            '<div class="kv"><span class="k">Patient</span><span>' +
+            escapeHtml(name) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Date</span><span>' +
+            escapeHtml(formatDisplayDate(dIso)) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Time in</span><span>' +
+            escapeHtml(tIn) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Time out</span><span>' +
+            escapeHtml(tOut) +
+            '</span></div>' +
+            '<h2>Subjective</h2>' +
+            '<div class="kv"><span class="k">Diagnosis</span><span>' +
+            escapeHtml(diag) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">PMH</span><span>' +
+            escapeHtml(pmh) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Prior level of function</span><span>' +
+            escapeHtml(plof) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Cognitive status</span><span>' +
+            escapeHtml(cog) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Homebound</span><span>' +
+            escapeHtml(hb) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Social situation</span><span>' +
+            escapeHtml(soc) +
+            '</span></div>' +
+            '<h2>Objective</h2>' +
+            '<div class="kv"><span class="k">Pre-exercise vitals</span><span>' +
+            escapeHtml(pre) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Post-exercise vitals</span><span>' +
+            escapeHtml(post) +
+            '</span></div>' +
+            tinettiHtml +
+            '<div class="kv"><span class="k">TUG</span><span>' +
+            escapeHtml(tug) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Assistive devices / home safety</span><span>' +
+            escapeHtml(homeSafety) +
+            '</span></div>' +
+            '<p><strong>ROM / MMT</strong></p>' +
+            romHtml +
+            '<div class="kv"><span class="k">Bed mobility</span><span>' +
+            escapeHtml(bed) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Transfers</span><span>' +
+            escapeHtml(xfer) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Gait</span><span>' +
+            escapeHtml(gaitTxt) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Reassess date</span><span>' +
+            escapeHtml(formatDisplayDate(rDate)) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Doctor &amp; phone</span><span>' +
+            escapeHtml(doc) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Recent Hx / chief complaint</span><span>' +
+            escapeHtml(recent) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">DME</span><span>' +
+            escapeHtml(dme) +
+            '</span></div>' +
+            '<div class="kv"><span class="k">Other</span><span>' +
+            escapeHtml(other) +
+            '</span></div>' +
+            '<h2>Assessment</h2>' +
+            '<p>' +
+            escapeHtml(assess).replace(/\n/g, '<br />') +
+            '</p>' +
+            '<h2>Plan</h2>' +
+            '<p>' +
+            escapeHtml(freq) +
+            '</p>' +
+            '<div class="kv"><span class="k">Rehab potential</span><span>' +
+            escapeHtml(rehab) +
+            '</span></div>' +
+            '<p><strong>Interventions</strong></p><ul>' +
+            checkedPlans
+              .map(function (x) {
+                return '<li>' + escapeHtml(x) + '</li>';
+              })
+              .join('') +
+            (checkedPlans.length ? '' : '<li>--</li>') +
+            '</ul>' +
+            '<h2>Short-term goals</h2>' +
+            goalsSt +
+            '<h2>Long-term goals</h2>' +
+            goalsLt +
+            sigBlock;
+        }
+
+        function wire() {
+          document.getElementById('btn_pdf').addEventListener('click', function () {
+            renderNarrative();
+            window.print();
+          });
+          document.getElementById('btn_refresh_goals').addEventListener('click', refreshGoals);
+
+          document.getElementById('btn_tinetti_open').addEventListener('click', openTinettiModal);
+          document.getElementById('btn_tinetti_apply').addEventListener('click', applyTinettiScores);
+          document.getElementById('btn_tinetti_close').addEventListener('click', closeTinettiModal);
+          document.getElementById('tinetti_modal').addEventListener('click', function (e) {
+            if (e.target === this) closeTinettiModal();
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            var m = document.getElementById('tinetti_modal');
+            if (m.classList.contains('is-open')) closeTinettiModal();
+          });
+
+          document.getElementById('time_in').addEventListener('change', function () {
+            syncTimeOutFromIn();
+            renderNarrative();
+          });
+          document.getElementById('time_in').addEventListener('input', function () {
+            syncTimeOutFromIn();
+            renderNarrative();
+          });
+
+          document.getElementById('time_out').addEventListener('change', function () {
+            timeOutTouched = true;
+            renderNarrative();
+          });
+          document.getElementById('time_out').addEventListener('input', function () {
+            timeOutTouched = true;
+            renderNarrative();
+          });
+
+          var ids = [
+            'patient_name',
+            'eval_date',
+            'diagnosis',
+            'pmh',
+            'vitals_pre',
+            'vitals_post',
+            'bed_mob',
+            'transfers',
+            'gait_level',
+            'ambulation_ft',
+            'ad_device',
+            'gait_free',
+            'reassess_date',
+            'doctor_phone',
+            'recent_hx',
+            'dme',
+            'other_obj',
+            'assessment',
+            'plan_frequency',
+            'plan_other_text',
+            'goal_st_transfers',
+            'goal_st_bed',
+            'goal_st_amb',
+            'goal_lt_transfers',
+            'goal_lt_bed',
+            'goal_lt_amb',
+            'goal_hep_st',
+            'goal_hep_lt',
+            'plof_ad_device',
+            'plof_other',
+            'tug',
+            'home_safety',
+          ];
+          ids.forEach(function (id) {
+            var el = document.getElementById(id);
+            el.addEventListener('input', renderNarrative);
+            el.addEventListener('change', renderNarrative);
+          });
+
+          [
+            'plof_i_amb',
+            'plof_sup_amb',
+            'plof_i_adl',
+            'plof_sup_adl',
+            'soc_alone',
+            'soc_others',
+          ].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', renderNarrative);
+          });
+
+          document
+            .querySelectorAll('input[name="cognitive"], input[name="homebound"], input[name="rehab"]')
+            .forEach(function (el) {
+              el.addEventListener('change', renderNarrative);
+            });
+
+          PLAN_ITEMS.forEach(function (item) {
+            document.getElementById(item.id).addEventListener('change', renderNarrative);
+          });
+
+          document.getElementById('bed_mob').addEventListener('change', function () {
+            refreshGoals();
+            renderNarrative();
+          });
+          document.getElementById('transfers').addEventListener('change', function () {
+            refreshGoals();
+            renderNarrative();
+          });
+          document.getElementById('gait_level').addEventListener('change', function () {
+            refreshGoals();
+            renderNarrative();
+          });
+          document.getElementById('ambulation_ft').addEventListener('change', function () {
+            refreshGoals();
+            renderNarrative();
+          });
+          document.getElementById('ad_device').addEventListener('change', function () {
+            refreshGoals();
+            renderNarrative();
+          });
+        }
+
+        function init() {
+          var now = new Date();
+          var h24 = now.getHours();
+          var min = now.getMinutes();
+          var ap = h24 >= 12 ? 'PM' : 'AM';
+          var h12 = h24 % 12;
+          if (h12 === 0) h12 = 12;
+          var tinObj = { h: h12, m: min, ap: ap };
+          document.getElementById('time_in').value = formatTimeTyped(tinObj);
+          document.getElementById('time_out').value = formatTimeTyped(
+            fromMinutesExact(toMinutes(tinObj) + 30)
+          );
+          timeOutTouched = false;
+
+          var dEl = document.getElementById('eval_date');
+          if (!dEl.value) dEl.value = toIsoLocal(new Date());
+          document.getElementById('reassess_date').value = toIsoLocal(addWeeks(parseIsoLocal(dEl.value), 8));
+
+          dEl.addEventListener('change', function () {
+            if (!document.getElementById('reassess_date').dataset.user) {
+              document.getElementById('reassess_date').value = toIsoLocal(
+                addWeeks(parseIsoLocal(dEl.value), 8)
+              );
+            }
+            renderNarrative();
+          });
+          document.getElementById('reassess_date').addEventListener('change', function () {
+            this.dataset.user = '1';
+            renderNarrative();
+          });
+
+          fillSelect('bed_mob');
+          fillSelect('transfers');
+          fillSelect('gait_level');
+          document.getElementById('bed_mob').value = 'Mod A';
+          document.getElementById('transfers').value = 'Mod A';
+          document.getElementById('gait_level').value = 'Mod A';
+
+          document.getElementById('assessment').value = DEFAULT_ASSESSMENT;
+
+          buildTinettiModalTables();
+          buildRomEditor();
+          buildPlanCheckboxes();
+          refreshGoals();
+          wire();
+          renderNarrative();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

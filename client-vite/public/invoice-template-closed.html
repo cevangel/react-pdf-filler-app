@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice</title>
+    <style>
+      :root {
+        --text: #1a1a1a;
+        --muted: #555;
+        --border: #ccc;
+        --bg: #fff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.45;
+        font-size: 14px;
+      }
+
+      .toolbar {
+        padding: 12px 16px;
+        background: #f4f4f4;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .toolbar button {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid #333;
+        background: #fff;
+        border-radius: 4px;
+      }
+
+      .toolbar button:hover {
+        background: #eee;
+      }
+
+      .invoice {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+      }
+
+      .invoice h1 {
+        margin: 0 0 4px;
+        font-size: 1.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 28px;
+        margin-bottom: 28px;
+      }
+
+      .meta-block address {
+        font-style: normal;
+        white-space: pre-line;
+      }
+
+      .meta-block .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .invoice-details {
+        text-align: right;
+      }
+
+      .invoice-details div {
+        margin-bottom: 4px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      td.amount {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .totals {
+        margin-left: auto;
+        width: 280px;
+        max-width: 100%;
+      }
+
+      .totals table {
+        margin: 0;
+      }
+
+      .totals td {
+        border-bottom: none;
+        padding: 6px 8px;
+      }
+
+      .totals tr.total-row td {
+        font-weight: 700;
+        font-size: 1.05rem;
+        border-top: 2px solid var(--text);
+        padding-top: 12px;
+      }
+
+      .payment {
+        margin-top: 36px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+      }
+
+      .payment h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 10px;
+        font-weight: 600;
+      }
+
+      .payment p {
+        margin: 0;
+        max-width: 65ch;
+      }
+
+      .footer-note {
+        margin-top: 40px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      @media print {
+        .toolbar {
+          display: none !important;
+        }
+
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+
+        .invoice {
+          padding: 0;
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button type="button" id="btn-pdf">Download as PDF</button>
+      <span style="font-size: 12px; color: #555"
+        >Uses your browser’s print dialog — choose “Save as PDF”.</span
+      >
+    </div>
+
+    <article class="invoice" id="invoice-root" aria-label="Invoice">
+      <header>
+        <h1>Invoice</h1>
+      </header>
+
+      <div class="meta">
+        <div class="meta-block">
+          <div class="label">From</div>
+          <address id="provider-address"></address>
+        </div>
+        <div class="meta-block">
+          <div class="label">Bill to</div>
+          <address id="client-address"></address>
+        </div>
+        <div class="meta-block invoice-details">
+          <div><strong>Invoice #</strong> <span id="inv-number"></span></div>
+          <div><strong>Issue date</strong> <span id="inv-issue"></span></div>
+          <div><strong>Due</strong> <span id="inv-due"></span></div>
+          <div id="inv-terms-wrap">
+            <strong>Terms</strong> <span id="inv-terms"></span>
+          </div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 22%">Date of service</th>
+            <th>Description</th>
+            <th style="width: 18%; text-align: right">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="line-body"></tbody>
+      </table>
+
+      <div class="totals">
+        <table>
+          <tbody>
+            <tr>
+              <td>Subtotal</td>
+              <td class="amount" id="subtotal"></td>
+            </tr>
+            <tr>
+              <td>Tax</td>
+              <td class="amount" id="tax"></td>
+            </tr>
+            <tr class="total-row">
+              <td>Total due</td>
+              <td class="amount" id="total"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="payment">
+        <h2>Payment instructions</h2>
+        <p id="payment-copy"></p>
+      </section>
+
+      <p class="footer-note">Thank you for your business.</p>
+    </article>
+
+    <!-- Closed-state sample: replace this script’s JSON or load invoice-sample-closed.json in your app -->
+    <script id="invoice-data" type="application/json">
+      {
+        "invoice_number": "2026-0001",
+        "issue_date": "2026-03-01",
+        "due_date": "2026-03-01",
+        "payment_terms": "Due on receipt",
+        "payment_instructions": "Payment is due upon receipt of this invoice. Pay via Zelle to yourname@example.com (memo: invoice number). Alternatively, send a check payable to [Your Legal or DBA Name] to the address above. Questions: call or text the number on this invoice.",
+        "currency": "USD",
+        "provider": {
+          "legal_name": "[Your Legal or DBA Name]",
+          "address_line1": "[123 Main Street]",
+          "address_line2": "",
+          "city": "[City]",
+          "state": "[ST]",
+          "postal_code": "[00000]",
+          "phone": "[(000) 000-0000]",
+          "email": "[you@example.com]"
+        },
+        "client": {
+          "client_name": "Jane Client",
+          "client_phone": "(555) 123-4567"
+        },
+        "lines": [
+          { "service_date": "2026-01-06", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-01-13", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-01-20", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-01-27", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-02-03", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-02-10", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-02-17", "description": "PT session", "amount_cents": 15000 },
+          { "service_date": "2026-02-24", "description": "PT session", "amount_cents": 15000 }
+        ],
+        "subtotal_cents": 120000,
+        "tax_cents": 0,
+        "total_cents": 120000
+      }
+    </script>
+
+    <script>
+      function formatUsd(cents) {
+        const n = Number(cents) || 0;
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(n / 100);
+      }
+
+      function formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T12:00:00');
+        return new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }).format(d);
+      }
+
+      function providerLines(p) {
+        const lines = [
+          p.legal_name,
+          p.address_line1,
+          p.address_line2 || null,
+          [p.city, p.state, p.postal_code].filter(Boolean).join(', '),
+          p.phone,
+          p.email,
+        ].filter(Boolean);
+        return lines.join('\n');
+      }
+
+      function clientLines(c) {
+        return [c.client_name, c.client_phone].filter(Boolean).join('\n');
+      }
+
+      function render(data) {
+        document.getElementById('inv-number').textContent = data.invoice_number;
+        document.getElementById('inv-issue').textContent = formatDate(
+          data.issue_date
+        );
+        document.getElementById('inv-due').textContent = formatDate(
+          data.due_date
+        );
+        document.getElementById('inv-terms').textContent = data.payment_terms;
+        document.getElementById('provider-address').textContent =
+          providerLines(data.provider);
+        document.getElementById('client-address').textContent = clientLines(
+          data.client
+        );
+        document.getElementById('payment-copy').textContent =
+          data.payment_instructions;
+
+        const tbody = document.getElementById('line-body');
+        tbody.innerHTML = '';
+        (data.lines || []).forEach(function (line) {
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' +
+            formatDate(line.service_date) +
+            '</td><td>' +
+            escapeHtml(line.description) +
+            '</td><td class="amount">' +
+            formatUsd(line.amount_cents) +
+            '</td>';
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('subtotal').textContent = formatUsd(
+          data.subtotal_cents
+        );
+        document.getElementById('tax').textContent = formatUsd(data.tax_cents);
+        document.getElementById('total').textContent = formatUsd(
+          data.total_cents
+        );
+      }
+
+      function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s == null ? '' : String(s);
+        return div.innerHTML;
+      }
+
+      const el = document.getElementById('invoice-data');
+      const data = JSON.parse(el.textContent);
+      render(data);
+
+      document.getElementById('btn-pdf').addEventListener('click', function () {
+        window.print();
+      });
+    </script>
+  </body>
+</html>

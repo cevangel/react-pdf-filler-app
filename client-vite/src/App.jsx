@@ -224,34 +224,32 @@ function App() {
   // This function is triggered when a user types in any input field.
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    // Handle checkbox inputs
+  
     if (type === 'checkbox') {
-      // Special handling for pressure ulcer checkbox
-      if (name === 'noPressureUlcer') {
-        setFormData(prev => ({ 
-          ...prev, 
-          noPressureUlcer: checked,
-          pressureUlcerNum: checked ? "0" : ""
-        }));
-      } else if (name === 'independentAOx3') {
-        // Special handling for Independent, AOx3 checkbox
-        setFormData(prev => ({
-          ...prev,
-          independentAOx3: checked,
-          indep: checked,
-          dischageDisp: checked ? "1" : "",
-          bims3: checked ? "3" : "",
-          bims2: checked ? "2" : "",
-          bims1: checked ? "1" : "",
-          msChange: checked ? "1" : "",
-          ms0: checked ? "0" : "",
-          indep0: checked ? "0" : ""
-        }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: checked }));
-      }
+      // ... your existing checkbox logic ...
     } else {
-      // Handle regular inputs and dropdowns
+      // SPECIAL CASE: bed mobility dropdown
+      if (name === 'bedMobLevel') {
+        setFormData(prev => {
+          const level = value;
+          return {
+            ...prev,
+            bedMobLevel: level,
+            // Optional: also keep a text summary if your PDF has a text field `bedMob`
+            bedMob: level,
+            // Map level to specific PDF checkbox fields
+            bedIndep: level === 'Independent',
+            bedSBA: level === 'SBA',
+            bedMin: level === 'Min A',
+            bedMod: level === 'Mod A',
+            bedMax: level === 'Max A',
+            bedDep: level === 'Dependent',
+          };
+        });
+        return;
+      }
+  
+      // Default behavior for other text/select fields
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
@@ -322,7 +320,19 @@ function App() {
             usedAcroForm = true;
             continue;
           } catch {
-            // Not a checkbox either — ignore silently
+            // Not a checkbox; try radio group
+          }
+
+          try {
+            const rg = form.getRadioGroup(key);
+            const optionValue = value == null ? "" : String(value).trim();
+            if (optionValue) {
+              rg.select(optionValue);
+              usedAcroForm = true;
+            }
+            continue;
+          } catch {
+            // Not a radio group — skip
           }
         }
 
@@ -385,6 +395,14 @@ function App() {
           {/* NEW: Subtitle with smaller text and lighter blue color */}
           <p className="text-blue-100 text-sm text-center mt-1">
             Physical Therapy Evaluation Forms
+          </p>
+          <p className="text-center mt-3">
+            <a
+              href="/pt-eval.html"
+              className="inline-block text-sm font-medium text-white bg-white/15 hover:bg-white/25 border border-white/40 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              Open PT eval note builder (local HTML)
+            </a>
           </p>
         </div>
 
@@ -488,17 +506,25 @@ function App() {
           {showHipaaFields && (
             <>
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Patient Name:
-                </label>
-                <input
-                  name="patientName"
-                  placeholder="Enter patient name"
-                  value={formData.patientName}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
+  <label className="block text-sm font-medium text-gray-700">
+    Bed Mobility
+  </label>
+  <select
+    name="bedMobLevel"
+    value={formData.bedMobLevel}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+  >
+    <option value="">Select bed mobility...</option>
+    <option value="Independent">Independent</option>
+    <option value="SBA">SBA</option>
+    <option value="CGA">CGA</option>        {/* text-only unless you add a bedCGA field */}
+    <option value="Min A">Min A</option>
+    <option value="Mod A">Mod A</option>
+    <option value="Max A">Max A</option>
+    <option value="Dependent">Dependent</option>
+  </select>
+</div>
               
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">

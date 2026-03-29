@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice generator</title>
+    <style>
+      :root {
+        --text: #1a1a1a;
+        --muted: #555;
+        --border: #ccc;
+        --bg: #fff;
+        --form-bg: #f8f9fa;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--text);
+        background: #e9ecef;
+        line-height: 1.45;
+        font-size: 14px;
+      }
+
+      .page-wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px 16px 48px;
+      }
+
+      h1.form-title {
+        font-size: 1.35rem;
+        margin: 0 0 16px;
+        font-weight: 650;
+      }
+
+      .form-card {
+        background: var(--form-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 14px 20px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        align-items: end;
+      }
+
+      .form-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .form-field input,
+      .form-field select {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .form-field.full {
+        grid-column: 1 / -1;
+      }
+
+      .radio-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        padding: 8px 0;
+      }
+
+      .radio-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+        max-width: 70ch;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      button.primary {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid #333;
+        background: #333;
+        color: #fff;
+        border-radius: 4px;
+      }
+
+      button.secondary {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+      }
+
+      button.primary:hover {
+        background: #111;
+      }
+
+      button.secondary:hover {
+        background: #eee;
+      }
+
+      .lines-editor {
+        margin-top: 16px;
+        overflow-x: auto;
+      }
+
+      .lines-editor table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .lines-editor th,
+      .lines-editor td {
+        border: 1px solid var(--border);
+        padding: 6px 8px;
+        text-align: left;
+      }
+
+      .lines-editor th {
+        background: #eee;
+        font-weight: 600;
+      }
+
+      .lines-editor input {
+        width: 100%;
+        border: none;
+        padding: 4px;
+        font-size: 13px;
+        font-family: inherit;
+      }
+
+      .preview-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .invoice-shell {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      /* Invoice document styles (match template) */
+      .invoice {
+        font-family: Georgia, 'Times New Roman', serif;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .invoice h1 {
+        margin: 0 0 4px;
+        font-size: 1.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .toolbar {
+        padding: 12px 16px;
+        background: #f4f4f4;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar button {
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: 1px solid #333;
+        background: #fff;
+        border-radius: 4px;
+      }
+
+      .toolbar button:hover {
+        background: #eee;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 28px;
+        margin-bottom: 28px;
+      }
+
+      .meta-block address {
+        font-style: normal;
+        white-space: pre-line;
+      }
+
+      .meta-block .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .invoice-details {
+        text-align: right;
+      }
+
+      .invoice-details div {
+        margin-bottom: 4px;
+      }
+
+      .invoice table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+      }
+
+      .invoice th,
+      .invoice td {
+        border-bottom: 1px solid var(--border);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .invoice th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .invoice td.amount {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .totals {
+        margin-left: auto;
+        width: 280px;
+        max-width: 100%;
+      }
+
+      .totals table {
+        margin: 0;
+      }
+
+      .totals td {
+        border-bottom: none;
+        padding: 6px 8px;
+      }
+
+      .totals tr.total-row td {
+        font-weight: 700;
+        font-size: 1.05rem;
+        border-top: 2px solid var(--text);
+        padding-top: 12px;
+      }
+
+      .payment {
+        margin-top: 36px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+      }
+
+      .payment h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 10px;
+        font-weight: 600;
+      }
+
+      .payment p {
+        margin: 0;
+        max-width: 65ch;
+      }
+
+      .footer-note {
+        margin-top: 40px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      @media print {
+        .page-wrap {
+          padding: 0;
+          max-width: none;
+        }
+
+        .form-card,
+        .preview-label {
+          display: none !important;
+        }
+
+        .invoice-shell {
+          border: none;
+          box-shadow: none;
+          border-radius: 0;
+        }
+
+        .toolbar {
+          display: none !important;
+        }
+
+        body {
+          background: #fff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrap">
+      <h1 class="form-title">Invoice generator (8 sessions)</h1>
+
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="client_name">Client name</label>
+            <input type="text" id="client_name" placeholder="Jane Client" />
+          </div>
+          <div class="form-field">
+            <label for="client_phone">Client phone (optional)</label>
+            <input type="text" id="client_phone" placeholder="(555) 123-4567" />
+          </div>
+          <div class="form-field">
+            <label for="issue_date">Issue date</label>
+            <input type="date" id="issue_date" />
+          </div>
+          <div class="form-field">
+            <label for="invoice_number">Invoice number</label>
+            <input type="text" id="invoice_number" placeholder="2026-0001" />
+          </div>
+          <div class="form-field">
+            <label for="rate_usd">Rate per visit (USD)</label>
+            <input type="number" id="rate_usd" min="0" step="0.01" value="150" />
+          </div>
+          <div class="form-field full">
+            <label for="line_description">Description (all lines)</label>
+            <input
+              type="text"
+              id="line_description"
+              value="PT session"
+              placeholder="PT session"
+            />
+          </div>
+        </div>
+
+        <p class="hint">
+          <strong>Weekly dates:</strong> Choose how the eight dates of service are
+          filled. Use <strong>last session = issue date</strong> when you complete
+          the invoice on the day of the 8th visit (today). Use
+          <strong>from first session</strong> when you know the date of visit 1 and
+          want visit 2–8 spaced one week apart.
+        </p>
+
+        <div class="radio-row">
+          <label>
+            <input type="radio" name="date_mode" value="last_is_issue" checked />
+            Last session is issue date (weekly backward)
+          </label>
+          <label>
+            <input type="radio" name="date_mode" value="from_first" />
+            From first session (weekly forward)
+          </label>
+        </div>
+
+        <div class="form-field" id="first_session_wrap" style="max-width: 280px">
+          <label for="first_session_date">First session date</label>
+          <input type="date" id="first_session_date" />
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="secondary" id="btn_apply_dates">
+            Apply weekly pattern to line dates
+          </button>
+          <button type="button" class="secondary" id="btn_sync_amounts">
+            Sync line amounts to rate
+          </button>
+        </div>
+
+        <div class="lines-editor">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px">Visit #</th>
+                <th style="width: 160px">Date of service</th>
+                <th>Description</th>
+                <th style="width: 100px">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="lines_body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="preview-label">Preview</div>
+      <div class="invoice-shell">
+        <div class="toolbar">
+          <button type="button" id="btn_pdf">Download as PDF</button>
+          <span style="font-size: 12px; color: #555"
+            >Print dialog → Save as PDF.</span
+          >
+        </div>
+
+        <article class="invoice" id="invoice_root" aria-label="Invoice">
+          <header>
+            <h1>Invoice</h1>
+          </header>
+
+          <div class="meta">
+            <div class="meta-block">
+              <div class="label">From</div>
+              <address id="provider_address"></address>
+            </div>
+            <div class="meta-block">
+              <div class="label">Bill to</div>
+              <address id="client_address"></address>
+            </div>
+            <div class="meta-block invoice-details">
+              <div><strong>Invoice #</strong> <span id="inv_number"></span></div>
+              <div><strong>Issue date</strong> <span id="inv_issue"></span></div>
+              <div><strong>Due</strong> <span id="inv_due"></span></div>
+              <div><strong>Terms</strong> <span id="inv_terms"></span></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Date of service</th>
+                <th>Description</th>
+                <th style="width: 18%; text-align: right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="line_body"></tbody>
+          </table>
+
+          <div class="totals">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Subtotal</td>
+                  <td class="amount" id="subtotal"></td>
+                </tr>
+                <tr>
+                  <td>Tax</td>
+                  <td class="amount" id="tax"></td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total due</td>
+                  <td class="amount" id="total"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <section class="payment">
+            <h2>Payment instructions</h2>
+            <p id="payment_copy"></p>
+          </section>
+
+          <p class="footer-note">Thank you for your business.</p>
+        </article>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        /** Edit once: static provider block on every invoice */
+        var PROVIDER = {
+          legal_name: '[Your Legal or DBA Name]',
+          address_line1: '[123 Main Street]',
+          address_line2: '',
+          city: '[City]',
+          state: '[ST]',
+          postal_code: '[00000]',
+          phone: '[(000) 000-0000]',
+          email: '[you@example.com]',
+        };
+
+        var PAYMENT_INSTRUCTIONS =
+          'Payment is due upon receipt of this invoice. Pay via Zelle to yourname@example.com (memo: invoice number). Alternatively, send a check payable to [Your Legal or DBA Name] to the address above. Questions: call or text the number on this invoice.';
+
+        var PAYMENT_TERMS = 'Due on receipt';
+        var NUM_VISITS = 8;
+
+        function toIsoLocal(d) {
+          var y = d.getFullYear();
+          var m = String(d.getMonth() + 1).padStart(2, '0');
+          var day = String(d.getDate()).padStart(2, '0');
+          return y + '-' + m + '-' + day;
+        }
+
+        function parseIsoLocal(iso) {
+          var parts = String(iso).split('-');
+          var y = parseInt(parts[0], 10);
+          var mo = parseInt(parts[1], 10) - 1;
+          var day = parseInt(parts[2], 10);
+          return new Date(y, mo, day);
+        }
+
+        function addDays(date, n) {
+          var d = new Date(date.getTime());
+          d.setDate(d.getDate() + n);
+          return d;
+        }
+
+        function formatUsd(cents) {
+          var n = Number(cents) || 0;
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(n / 100);
+        }
+
+        function formatDisplayDate(iso) {
+          if (!iso) return '';
+          var d = parseIsoLocal(iso);
+          return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          }).format(d);
+        }
+
+        function dollarsToCents(s) {
+          var n = parseFloat(String(s).replace(/[^0-9.-]/g, ''), 10);
+          if (isNaN(n) || n < 0) return 0;
+          return Math.round(n * 100);
+        }
+
+        function centsToInputDollars(cents) {
+          return (Number(cents) / 100).toFixed(2);
+        }
+
+        function providerLines() {
+          var p = PROVIDER;
+          var line2 = p.address_line2 ? p.address_line2 + '\n' : '';
+          var cityLine = [p.city, p.state, p.postal_code].filter(Boolean).join(', ');
+          return [p.legal_name, p.address_line1, line2 + cityLine, p.phone, p.email]
+            .filter(function (x) {
+              return String(x).trim().length > 0;
+            })
+            .join('\n');
+        }
+
+        function getDateMode() {
+          var r = document.querySelector('input[name="date_mode"]:checked');
+          return r ? r.value : 'last_is_issue';
+        }
+
+        function toggleFirstSessionVisibility() {
+          var wrap = document.getElementById('first_session_wrap');
+          var show = getDateMode() === 'from_first';
+          wrap.style.display = show ? 'block' : 'none';
+        }
+
+        function buildLineRowsEditor() {
+          var tbody = document.getElementById('lines_body');
+          tbody.innerHTML = '';
+          var today = toIsoLocal(new Date());
+          var issueEl = document.getElementById('issue_date');
+          if (!issueEl.value) issueEl.value = today;
+
+          for (var i = 0; i < NUM_VISITS; i++) {
+            var tr = document.createElement('tr');
+            var visitNum = i + 1;
+            tr.innerHTML =
+              '<td>Visit ' +
+              visitNum +
+              '</td>' +
+              '<td><input type="date" class="line-date" data-i="' +
+              i +
+              '" /></td>' +
+              '<td><input type="text" class="line-desc" data-i="' +
+              i +
+              '" /></td>' +
+              '<td><input type="number" class="line-amt" min="0" step="0.01" data-i="' +
+              i +
+              '" /></td>';
+            tbody.appendChild(tr);
+          }
+
+          document.querySelectorAll('.line-date, .line-desc, .line-amt').forEach(function (el) {
+            el.addEventListener('input', renderPreview);
+            el.addEventListener('change', renderPreview);
+          });
+        }
+
+        function applyWeeklyPattern() {
+          var mode = getDateMode();
+          var issueIso = document.getElementById('issue_date').value;
+          if (!issueIso) return;
+
+          var issueDate = parseIsoLocal(issueIso);
+          var dates = document.querySelectorAll('.line-date');
+
+          if (mode === 'last_is_issue') {
+            for (var i = 0; i < NUM_VISITS; i++) {
+              var visitIndexFromEnd = NUM_VISITS - 1 - i;
+              var d = addDays(issueDate, -7 * visitIndexFromEnd);
+              dates[i].value = toIsoLocal(d);
+            }
+          } else {
+            var firstIso = document.getElementById('first_session_date').value;
+            if (!firstIso) return;
+            var start = parseIsoLocal(firstIso);
+            for (var j = 0; j < NUM_VISITS; j++) {
+              dates[j].value = toIsoLocal(addDays(start, 7 * j));
+            }
+          }
+
+          syncDescriptionsFromForm();
+          syncAmountsFromRate();
+          renderPreview();
+        }
+
+        function syncDescriptionsFromForm() {
+          var text = document.getElementById('line_description').value || 'PT session';
+          document.querySelectorAll('.line-desc').forEach(function (inp) {
+            inp.value = text;
+          });
+        }
+
+        function syncAmountsFromRate() {
+          var rate = document.getElementById('rate_usd').value;
+          document.querySelectorAll('.line-amt').forEach(function (inp) {
+            inp.value = rate;
+          });
+        }
+
+        function readLinesFromEditor() {
+          var dates = document.querySelectorAll('.line-date');
+          var descs = document.querySelectorAll('.line-desc');
+          var amts = document.querySelectorAll('.line-amt');
+          var lines = [];
+          for (var i = 0; i < NUM_VISITS; i++) {
+            lines.push({
+              service_date: dates[i].value,
+              description: descs[i].value || 'PT session',
+              amount_cents: dollarsToCents(amts[i].value),
+            });
+          }
+          return lines;
+        }
+
+        function computeTotals(lines) {
+          var sub = lines.reduce(function (s, L) {
+            return s + (L.amount_cents || 0);
+          }, 0);
+          return { subtotal_cents: sub, tax_cents: 0, total_cents: sub };
+        }
+
+        function escapeHtml(s) {
+          var div = document.createElement('div');
+          div.textContent = s == null ? '' : String(s);
+          return div.innerHTML;
+        }
+
+        function renderPreview() {
+          var clientName = document.getElementById('client_name').value.trim();
+          var clientPhone = document.getElementById('client_phone').value.trim();
+          var issueIso = document.getElementById('issue_date').value;
+          var invNum =
+            document.getElementById('invoice_number').value.trim() ||
+            defaultInvoiceNumber();
+
+          document.getElementById('provider_address').textContent = providerLines();
+
+          var clientBlock = [clientName, clientPhone].filter(Boolean).join('\n');
+          document.getElementById('client_address').textContent =
+            clientBlock || '—';
+
+          document.getElementById('inv_number').textContent = invNum;
+          document.getElementById('inv_issue').textContent = formatDisplayDate(issueIso);
+          document.getElementById('inv_due').textContent = formatDisplayDate(issueIso);
+          document.getElementById('inv_terms').textContent = PAYMENT_TERMS;
+          document.getElementById('payment_copy').textContent = PAYMENT_INSTRUCTIONS;
+
+          var lines = readLinesFromEditor();
+          var tbody = document.getElementById('line_body');
+          tbody.innerHTML = '';
+          lines.forEach(function (line) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' +
+              escapeHtml(formatDisplayDate(line.service_date)) +
+              '</td><td>' +
+              escapeHtml(line.description) +
+              '</td><td class="amount">' +
+              escapeHtml(formatUsd(line.amount_cents)) +
+              '</td>';
+            tbody.appendChild(tr);
+          });
+
+          var t = computeTotals(lines);
+          document.getElementById('subtotal').textContent = formatUsd(t.subtotal_cents);
+          document.getElementById('tax').textContent = formatUsd(t.tax_cents);
+          document.getElementById('total').textContent = formatUsd(t.total_cents);
+        }
+
+        function defaultInvoiceNumber() {
+          var y = new Date().getFullYear();
+          return y + '-0001';
+        }
+
+        function init() {
+          document.getElementById('invoice_number').placeholder = defaultInvoiceNumber();
+
+          if (!document.getElementById('issue_date').value) {
+            document.getElementById('issue_date').value = toIsoLocal(new Date());
+          }
+
+          buildLineRowsEditor();
+          toggleFirstSessionVisibility();
+
+          var issue = document.getElementById('issue_date').value;
+          var firstGuess = toIsoLocal(addDays(parseIsoLocal(issue), -7 * (NUM_VISITS - 1)));
+          document.getElementById('first_session_date').value = firstGuess;
+
+          applyWeeklyPattern();
+
+          document.querySelectorAll('input[name="date_mode"]').forEach(function (r) {
+            r.addEventListener('change', function () {
+              toggleFirstSessionVisibility();
+              applyWeeklyPattern();
+            });
+          });
+
+          document.getElementById('issue_date').addEventListener('change', function () {
+            if (getDateMode() === 'last_is_issue') applyWeeklyPattern();
+            else renderPreview();
+          });
+
+          document.getElementById('first_session_date').addEventListener('change', function () {
+            if (getDateMode() === 'from_first') applyWeeklyPattern();
+          });
+
+          document.getElementById('btn_apply_dates').addEventListener('click', applyWeeklyPattern);
+          document.getElementById('btn_sync_amounts').addEventListener('click', function () {
+            syncAmountsFromRate();
+            renderPreview();
+          });
+
+          [
+            'client_name',
+            'client_phone',
+            'issue_date',
+            'invoice_number',
+            'rate_usd',
+            'line_description',
+          ].forEach(function (id) {
+            document.getElementById(id).addEventListener('input', renderPreview);
+            document.getElementById(id).addEventListener('change', renderPreview);
+          });
+
+          document.getElementById('btn_pdf').addEventListener('click', function () {
+            window.print();
+          });
+
+          renderPreview();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

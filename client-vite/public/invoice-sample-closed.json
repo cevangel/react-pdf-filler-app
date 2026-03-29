@@ -1,0 +1,67 @@
+{
+  "invoice_number": "2026-0001",
+  "issue_date": "2026-03-01",
+  "due_date": "2026-03-01",
+  "payment_terms": "Due on receipt",
+  "payment_instructions": "Payment is due upon receipt of this invoice. Pay via Zelle to yourname@example.com (memo: invoice number). Alternatively, send a check payable to [Your Legal or DBA Name] to the address above. Questions: call or text the number on this invoice.",
+  "currency": "USD",
+  "provider": {
+    "legal_name": "[Your Legal or DBA Name]",
+    "address_line1": "[123 Main Street]",
+    "address_line2": "",
+    "city": "[City]",
+    "state": "[ST]",
+    "postal_code": "[00000]",
+    "phone": "[(000) 000-0000]",
+    "email": "[you@example.com]"
+  },
+  "client": {
+    "client_name": "Jane Client",
+    "client_phone": "(555) 123-4567"
+  },
+  "lines": [
+    {
+      "service_date": "2026-01-06",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-01-13",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-01-20",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-01-27",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-02-03",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-02-10",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-02-17",
+      "description": "PT session",
+      "amount_cents": 15000
+    },
+    {
+      "service_date": "2026-02-24",
+      "description": "PT session",
+      "amount_cents": 15000
+    }
+  ],
+  "subtotal_cents": 120000,
+  "tax_cents": 0,
+  "total_cents": 120000
+}
