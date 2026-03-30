@@ -1,6 +1,6 @@
 // Robust PWA Service Worker for PDF Filler App
-// CHANGED: Updated cache name from v1 to v2 to force cache refresh
-const CACHE_NAME = 'pt-pdf-filler-v7';
+// Bump this string after deploys when users must see fresh HTML/JS (service worker is cache-first).
+const CACHE_NAME = 'pt-pdf-filler-v8';
 
 // App shell files that should be cached
 const APP_SHELL = [

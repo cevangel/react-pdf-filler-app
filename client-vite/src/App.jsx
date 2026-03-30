@@ -7,6 +7,62 @@ import axios from "axios"; //sends requests to servers
 // CHANGED: Import pdf-lib for client-side PDF fill & flatten (no server needed).
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
+/** PDF AcroForm field names -> readable labels (keys must match Acrobat exactly). */
+const ACROFORM_FIELD_LABELS = {
+  postbp: 'Post-Exercise BP',
+  postpulse: 'Post-Exercise Pulse',
+  timeIn: 'Time in',
+  timeOut: 'Time out',
+};
+
+/** HTML time value HH:mm -> +30 minutes, same format (24h). */
+function add30MinutesToTimeHHMM(hhmm) {
+  if (!hhmm || typeof hhmm !== 'string') return '';
+  const parts = hhmm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!parts) return '';
+  let h = parseInt(parts[1], 10);
+  let m = parseInt(parts[2], 10);
+  if (h > 23 || m > 59) return '';
+  let total = h * 60 + m + 30;
+  total = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const nh = Math.floor(total / 60);
+  const nm = total % 60;
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+}
+
+/** HH:mm (24h) -> "h:mm AM/PM" for PDF text fields */
+function formatTime12FromHHMM(hhmm) {
+  if (!hhmm || typeof hhmm !== 'string') return '';
+  const parts = hhmm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!parts) return hhmm;
+  let h = parseInt(parts[1], 10);
+  const m = parts[2];
+  if (h > 23) return hhmm;
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ap}`;
+}
+
+/** YYYY-MM-DD (from date picker value) -> MM/DD/YYYY for PDF text field `date` */
+function isoDateToMDY(iso) {
+  if (!iso || typeof iso !== 'string') return '';
+  const p = iso.trim().split('-');
+  if (p.length !== 3) return iso;
+  const [y, mo, d] = p;
+  if (!y || !mo || !d || y.length !== 4) return iso;
+  return `${mo.padStart(2, '0')}/${d.padStart(2, '0')}/${y}`;
+}
+
+/** YYYY-MM-DD -&gt; MM-DD-YYYY for download filename (slashes are invalid on Windows paths) */
+function isoDateToFilenameDate(iso) {
+  if (!iso || typeof iso !== 'string') return '';
+  const p = iso.trim().split('-');
+  if (p.length !== 3) return '';
+  const [y, mo, d] = p;
+  if (!y || !mo || !d) return '';
+  return `${mo.padStart(2, '0')}-${d.padStart(2, '0')}-${y}`;
+}
+
 // Define the main component
 function App() {
   
@@ -16,8 +72,11 @@ function App() {
   // Online/offline status for HIPAA field visibility
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // Manual offline mode for HIPAA protection
-  const [manualOfflineMode, setManualOfflineMode] = useState(false);
+  // Manual offline mode for HIPAA protection (default on: show date/bed mobility and treat as HIPAA-safe UI)
+  const [manualOfflineMode, setManualOfflineMode] = useState(true);
+
+  // After user edits time out, stop auto-updating it from time in (until refresh)
+  const [timeOutUserEdited, setTimeOutUserEdited] = useState(false);
   
   // Infographic modal state
   const [showInfographic, setShowInfographic] = useState(false);
@@ -131,6 +190,8 @@ function App() {
     diagnosis: 'M62.81',
     bp: "",
     pulse: "",
+    postbp: "",
+    postpulse: "",
     pmh: "",
     rom: "WFL",
     timeIn: "",
@@ -180,6 +241,9 @@ function App() {
     treatmentType: "",
     diagnosis: 'M62.81',
     bp: "",
+    pulse: "",
+    postbp: "",
+    postpulse: "",
     pmh: "",
     rom: "WFL",
     timeIn: "",
@@ -248,6 +312,21 @@ function App() {
         });
         return;
       }
+
+      if (name === 'timeIn') {
+        setFormData((prev) => ({
+          ...prev,
+          timeIn: value,
+          timeOut: timeOutUserEdited ? prev.timeOut : add30MinutesToTimeHHMM(value),
+        }));
+        return;
+      }
+
+      if (name === 'timeOut') {
+        setTimeOutUserEdited(true);
+        setFormData((prev) => ({ ...prev, timeOut: value }));
+        return;
+      }
   
       // Default behavior for other text/select fields
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -292,7 +371,15 @@ function App() {
             dateData.month = dateParts[1].split('').join(' '); // YYYY-MM-DD format
             dateData.day = dateParts[2].split('').join(' ');
             dateData.year = dateParts[0].split('').join(' ');
+            // Single AcroForm text field `date` typically expects one readable string
+            dateData.date = isoDateToMDY(formData.date);
           }
+        }
+        if (dateData.timeIn) {
+          dateData.timeIn = formatTime12FromHHMM(dateData.timeIn);
+        }
+        if (dateData.timeOut) {
+          dateData.timeOut = formatTime12FromHHMM(dateData.timeOut);
         }
 
         // Attempt to set text fields
@@ -353,14 +440,16 @@ function App() {
       const link = document.createElement("a");
       link.href = url;
       
-      // Generate filename based on online/offline status and available data
+      // Filename: "patientName treatmentType MM-DD-YYYY.pdf" (hyphens in date; / is invalid in Windows paths)
       let filename;
-      if (showHipaaFields && formData.patientName && formData.treatmentType && formData.date) {
-        // When HIPAA fields are visible and filled: "[patientName] [treatment type] [date]"
-        const cleanPatientName = formData.patientName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-        const cleanTreatmentType = formData.treatmentType.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-        const cleanDate = formData.date.replace(/[^a-zA-Z0-9]/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3');
-        filename = `${cleanPatientName} ${cleanTreatmentType} ${cleanDate}.pdf`;
+      const nameTrim = (formData.patientName || '').trim();
+      const txTrim = (formData.treatmentType || '').trim();
+      const dateTrim = (formData.date || '').trim();
+      if (nameTrim && txTrim && dateTrim) {
+        const cleanPatientName = nameTrim.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, ' ').trim();
+        const cleanTreatmentType = txTrim.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, ' ').trim();
+        const datePart = isoDateToFilenameDate(dateTrim);
+        filename = `${cleanPatientName} ${cleanTreatmentType} ${datePart}.pdf`;
       } else if (formData.treatmentType) {
         // When treatment type is available but not HIPAA fields: "[treatment type] [template]"
         const cleanTreatmentType = formData.treatmentType.replace(/[^a-zA-Z0-9\s]/g, '').trim();
@@ -484,14 +573,15 @@ function App() {
               <p className={`text-xs mt-1 ${showHipaaFields ? 'text-green-600' : 'text-red-600'}`}>
                 {showHipaaFields ? (
                   <>
-                    <strong>HIPAA PROTECTED:</strong> Patient name and date fields are visible. 
+                    <strong>HIPAA PROTECTED:</strong> Extra fields (date, bed mobility) are visible. 
                     {manualOfflineMode ? ' Manual offline mode enabled - ' : ' Device offline - '}
                     All data stays on your device and is not transmitted over the network.
                   </>
                 ) : (
                   <>
-                    <strong>ONLINE:</strong> Patient name and date fields are hidden for HIPAA compliance. 
-                    Use the "Offline Function" button above to enable HIPAA-safe mode.
+                    <strong>ONLINE:</strong> Use the &ldquo;Offline Function&rdquo; button above to hide
+                    sensitive fields and enable HIPAA-safe mode. Patient name and date below are only used
+                    locally for the PDF; nothing is uploaded by this app.
                   </>
                 )}
               </p>
@@ -503,6 +593,21 @@ function App() {
         {/* px-6 py-4 = consistent padding, space-y-4 = vertical spacing between form elements */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           {/* HIPAA-sensitive fields - visible when offline OR manual offline mode */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Patient name
+            </label>
+            <input
+              name="patientName"
+              type="text"
+              autoComplete="off"
+              placeholder="Full name as it should appear on the PDF"
+              value={formData.patientName}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
           {showHipaaFields && (
             <>
               <div className="space-y-1">
@@ -528,7 +633,7 @@ function App() {
               
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Date:
+                  Date (MM/DD/YYYY on PDF)
                 </label>
                 <input
                   name="date"
@@ -537,6 +642,11 @@ function App() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
+                {formData.date ? (
+                  <p className="text-xs text-gray-600">
+                    On PDF: <span className="font-medium">{isoDateToMDY(formData.date)}</span>
+                  </p>
+                ) : null}
               </div>
             </>
           )}
@@ -561,6 +671,41 @@ function App() {
             </select>
           </div>
 
+          {/* Time in/out: native time pickers; PDF gets 12h text (e.g. 2:30 PM) */}
+          {!(selectedTemplate === 'OASISDC') && (
+            <>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {ACROFORM_FIELD_LABELS.timeIn}
+                </label>
+                <input
+                  name="timeIn"
+                  type="time"
+                  step={60}
+                  value={formData.timeIn}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Time out defaults to 30 minutes after time in. Editing time out turns off auto-update.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {ACROFORM_FIELD_LABELS.timeOut}
+                </label>
+                <input
+                  name="timeOut"
+                  type="time"
+                  step={60}
+                  value={formData.timeOut}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+            </>
+          )}
+
           {/* Standard form fields for all templates */}
           {Object.keys(formData)
             .filter(field => !field.includes('eatingOralHygiene') && 
@@ -570,6 +715,8 @@ function App() {
                             field !== 'patientName' && 
                             field !== 'date' &&
                             field !== 'treatmentType' &&
+                            field !== 'timeIn' &&
+                            field !== 'timeOut' &&
                             field !== 'continuingFunctionalProblems' &&
                             field !== 'progressMadeTowardPreviousGoals' &&
                             field !== 'revisedGoals' &&
@@ -591,6 +738,8 @@ function App() {
                               field === 'diagnosis' ||
                               field === 'bp' ||
                               field === 'pulse' ||
+                              field === 'postbp' ||
+                              field === 'postpulse' ||
                               field === 'pmh' ||
                               field === 'rom' ||
                               field === 'timeIn' ||
@@ -602,10 +751,13 @@ function App() {
                             )))
             .map((field) => {
               const isOasisField = selectedTemplate === 'OASISDC' && (field === 'bedMob' || field === 'transfers' || field === 'gait');
+              const fieldLabel =
+                ACROFORM_FIELD_LABELS[field] ??
+                field.replace(/([A-Z])/g, ' $1').trim();
               return (
                 <div key={field} className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700 capitalize flex items-center gap-2">
-                    {field.replace(/([A-Z])/g, ' $1').trim()}:
+                    {fieldLabel}:
                     {isOasisField && (
                       <button
                         type="button"
@@ -621,7 +773,7 @@ function App() {
                   </label>
                   <input
                     name={field}
-                    placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`}
+                    placeholder={`Enter ${fieldLabel.toLowerCase()}`}
                     value={formData[field]}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
